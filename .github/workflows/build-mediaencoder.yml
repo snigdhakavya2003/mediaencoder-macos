@@ -15,10 +15,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Homebrew dependencies (FFmpeg 4.4)
+      - name: Install Homebrew dependencies (FFmpeg 4)
         run: |
-          brew install ffmpeg@4.4
-          brew link --force ffmpeg@4.4
+          brew install ffmpeg@4
+          brew link --force ffmpeg@4
 
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1.13
