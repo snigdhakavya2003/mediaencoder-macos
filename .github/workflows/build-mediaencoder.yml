@@ -15,11 +15,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install ffmpeg with pkg-config
+      - name: Install dependencies wirh homebrew
         run: |
+          brew update
           brew install pkg-config
           brew install ffmpeg@4
-          brew link --force ffmpeg@4
 
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1.13
