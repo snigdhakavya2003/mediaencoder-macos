@@ -15,8 +15,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Homebrew dependencies (FFmpeg 4)
+      - name: Install ffmpeg with pkg-config
         run: |
+          brew install pkg-config
           brew install ffmpeg@4
           brew link --force ffmpeg@4
 
