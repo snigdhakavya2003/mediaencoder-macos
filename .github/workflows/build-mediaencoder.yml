@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake ../MediaEncoder
 
       - name: Build MediaEncoder
         run: |
