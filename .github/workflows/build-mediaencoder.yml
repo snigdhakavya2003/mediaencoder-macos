@@ -10,23 +10,25 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install dependencies (FFmpeg + pkg-config)
+      - name: Download FFmpeg shared SDK (BtbN)
         run: |
-          brew install pkg-config ffmpeg
+          curl -LO https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-n6.1-latest-macos64-shared.zip
+          unzip ffmpeg-n6.1-latest-macos64-shared.zip
+          mv ffmpeg-n6.1-* ffmpeg
 
-      - name: Set environment paths for FFmpeg
+      - name: Set FFmpeg environment paths
         run: |
-          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$PWD/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$PWD/ffmpeg" >> $GITHUB_ENV
 
-      - name: Debug FFmpeg pkg-config files
+      - name: Debug: Verify FFmpeg presence
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || echo "FFmpeg .pc files missing"
-          pkg-config --modversion libavcodec || echo "libavcodec not found"
+          ls ffmpeg/lib/pkgconfig
+          pkg-config --list-all | grep av
 
       - name: Create build directory
         run: mkdir -p build
@@ -36,14 +38,13 @@ jobs:
         env:
           PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
           CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
-        run: |
-          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
+        run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build MediaEncoder
+      - name: Build project
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload .dylib as artifact
+      - name: Upload built .dylib
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib

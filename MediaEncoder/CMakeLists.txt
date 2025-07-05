@@ -18,7 +18,7 @@ pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
     swscale
     swresample
 )
-
+target_link_libraries(MediaEncoder PkgConfig::FFMPEG)
 # Specify the source files
 set(SOURCES
     MediaWriter.cpp
