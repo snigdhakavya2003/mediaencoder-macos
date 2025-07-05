@@ -13,25 +13,19 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install dependencies and build FFmpeg with pkg-config
+      - name: Install dependencies (FFmpeg + pkg-config)
         run: |
-          brew install pkg-config yasm
-          brew uninstall --ignore-dependencies ffmpeg || true
-          brew install ffmpeg --build-from-source \
-            --with-pkg-config \
-            --with-libvorbis \
-            --with-libvpx \
-            --with-x264
+          brew install pkg-config ffmpeg
 
-      - name: Set environment variables
+      - name: Set environment paths for FFmpeg
         run: |
-          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
           echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg" >> $GITHUB_ENV
 
-      - name: Verify pkg-config sees FFmpeg
+      - name: Debug FFmpeg pkg-config files
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          ls /opt/homebrew/lib/pkgconfig | grep av || echo "FFmpeg .pc files missing"
+          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || echo "FFmpeg .pc files missing"
           pkg-config --modversion libavcodec || echo "libavcodec not found"
 
       - name: Create build directory
@@ -39,18 +33,20 @@ jobs:
 
       - name: Configure with CMake
         working-directory: build
+        env:
+          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
+          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
         run: |
-          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH
+          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build project
+      - name: Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload built .dylib
+      - name: Upload .dylib as artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
           path: |
             build/*.dylib
-            build/*/.dylib
+            build/**/*.dylib
