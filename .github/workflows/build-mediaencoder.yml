@@ -10,43 +10,40 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg with full support
+      - name: Install FFmpeg with pkg-config support
         run: |
-          brew uninstall --ignore-dependencies ffmpeg || true
+          brew install pkg-config
           brew install ffmpeg
 
-      - name: Set environment variables for pkg-config and CMake
+      - name: Export PKG_CONFIG_PATH
         run: |
-          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
 
-      - name: Debug: Show installed pkg-config FFmpeg files
+      - name: Debug FFmpeg pkg-config files
         run: |
-          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || true
-          pkg-config --list-all | grep av
+          echo "Using PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig
+          pkg-config --modversion libavcodec
 
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Configure with CMake
+      - name: Configure CMake
         working-directory: build
-        env:
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
-        run: cmake ../MediaEncoder
+        run: |
+          cmake ../MediaEncoder -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build project
+      - name: Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload built .dylib as artifact
+      - name: Upload .dylib as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
           path: |
             build/*.dylib
-            build/*/.dylib
+            build/**/*.dylib
