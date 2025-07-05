@@ -13,34 +13,42 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Install FFmpeg and dependencies
         run: |
+          brew update
           brew install pkg-config
-          brew install ffmpeg
+          brew reinstall ffmpeg --build-from-source
 
-      - name: Set environment variables
+      - name: Set environment variables for pkg-config and CMake
         run: |
           echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
           echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg" >> $GITHUB_ENV
 
-      - name: Debug FFmpeg .pc files
+      - name: Debug: Show installed pkg-config FFmpeg files
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
           ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || true
-          pkg-config --list-all | grep av || true
+          pkg-config --modversion libavcodec || true
+          pkg-config --cflags --libs libavcodec libavformat libavutil libswscale libswresample || true
 
-      - name: Create and configure build
+      - name: Create build directory
+        run: mkdir -p build
+
+      - name: Configure with CMake
+        working-directory: build
+        env:
+          PKG_CONFIG_PATH: /opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
+          CMAKE_PREFIX_PATH: /opt/homebrew/opt/ffmpeg
         run: |
-          mkdir -p build
-          cd build
-          cmake ../MediaEncoder -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg -DCMAKE_BUILD_TYPE=Release
+          cmake ../MediaEncoder \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DPKG_CONFIG_EXECUTABLE=/opt/homebrew/bin/pkg-config
 
       - name: Build MediaEncoder
-        run: |
-          cd build
-          cmake --build . --config Release
+        working-directory: build
+        run: cmake --build . --config Release
 
-      - name: Upload built .dylib
+      - name: Upload built .dylib as artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
