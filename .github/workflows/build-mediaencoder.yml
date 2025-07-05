@@ -13,33 +13,35 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install dependencies (pkg-config + FFmpeg)
+      - name: Install dependencies and build FFmpeg with pkg-config
         run: |
-          brew install pkg-config
-          brew install ffmpeg
+          brew install pkg-config yasm
+          brew uninstall --ignore-dependencies ffmpeg || true
+          brew install ffmpeg --build-from-source \
+            --with-pkg-config \
+            --with-libvorbis \
+            --with-libvpx \
+            --with-x264
 
-      - name: Set environment for pkg-config
+      - name: Set environment variables
         run: |
-          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
           echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg" >> $GITHUB_ENV
 
-      - name: Debug FFmpeg pkg-config files
+      - name: Verify pkg-config sees FFmpeg
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || echo "pkgconfig not found"
-          pkg-config --list-all | grep av || echo "FFmpeg libs not listed"
+          ls /opt/homebrew/lib/pkgconfig | grep av || echo "FFmpeg .pc files missing"
+          pkg-config --modversion libavcodec || echo "libavcodec not found"
 
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Run CMake configuration
+      - name: Configure with CMake
         working-directory: build
-        env:
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
         run: |
-          cmake ../MediaEncoder \
-            -DCMAKE_BUILD_TYPE=Release
+          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH
 
       - name: Build project
         working-directory: build
