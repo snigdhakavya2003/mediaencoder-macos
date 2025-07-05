@@ -13,13 +13,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          brew update
-          brew uninstall --ignore-dependencies ffmpeg || true
-          brew tap homebrew-ffmpeg/ffmpeg
-          brew install homebrew-ffmpeg/ffmpeg/ffmpeg --HEAD
-          echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig" >> $GITHUB_ENV
+      - name: Install FFmpeg
+        run: brew install ffmpeg
+
+      - name: Set PKG_CONFIG_PATH
+        run: echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
+
+
+
       - name: Debug FFmpeg path
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
@@ -29,7 +30,12 @@ jobs:
 
       - name: Create build directory
         run: mkdir -p build
-
+      - name: Run CMake
+        run: |
+         mkdir -p build
+         cd build
+         cmake ..
+         make
       - name: Configure with CMake
         working-directory: build
         env:
