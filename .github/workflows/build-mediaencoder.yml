@@ -30,12 +30,6 @@ jobs:
 
       - name: Create build directory
         run: mkdir -p build
-      - name: Run CMake
-        run: |
-         mkdir -p build
-         cd build
-         cmake ..
-         make
       - name: Configure with CMake
         working-directory: build
         env:
