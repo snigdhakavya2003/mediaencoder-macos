@@ -13,31 +13,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg and dependencies
+      - name: Install FFmpeg with pkg-config support
         run: |
-          brew install pkg-config ffmpeg
-          brew link --overwrite ffmpeg
+          brew install pkg-config
+          brew install ffmpeg
 
-      - name: Set PKG_CONFIG_PATH
+      - name: Export PKG_CONFIG_PATH
         run: |
-          echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
 
-      - name: Debug FFmpeg pkg-config
+      - name: Debug FFmpeg pkg-config files
         run: |
-         echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-         for p in $(echo $PKG_CONFIG_PATH | tr ":" "\n"); do
-           echo "Checking path: $p"
-           ls "$p" || echo "Directory $p not found"
-         done
-         pkg-config --modversion libavcodec || echo "libavcodec not found"
-
+          echo "Using PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig
+          pkg-config --modversion libavcodec
 
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Configure with CMake
+      - name: Configure CMake
         working-directory: build
-        run: cmake ../MediaEncoder
+        run: |
+          cmake ../MediaEncoder -DCMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg -DCMAKE_BUILD_TYPE=Release
 
       - name: Build MediaEncoder
         working-directory: build
@@ -49,4 +46,4 @@ jobs:
           name: MediaEncoder-macOS-lib
           path: |
             build/*.dylib
-            build/**/*.dylib
+            build/*/.dylib
