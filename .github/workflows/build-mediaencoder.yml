@@ -20,6 +20,12 @@ jobs:
           brew tap homebrew-ffmpeg/ffmpeg
           brew install homebrew-ffmpeg/ffmpeg/ffmpeg --HEAD
           echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig" >> $GITHUB_ENV
+      - name: Debug FFmpeg path
+        run: |
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          ls $PKG_CONFIG_PATH
+          pkg-config --modversion libavcodec
+
 
       - name: Create build directory
         run: mkdir -p build
