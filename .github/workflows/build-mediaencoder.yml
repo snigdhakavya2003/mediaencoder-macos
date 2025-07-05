@@ -29,7 +29,8 @@ jobs:
           ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || true
           pkg-config --list-all | grep av
       - name: Create build directory
-        run: mkdir -p build
+        run: |
+          mkdir -p build
 
      
       - name: Configure with CMake
@@ -37,10 +38,12 @@ jobs:
         env:
           PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
           CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
-        run: cmake ../MediaEncoder
+        run: |
+          cmake ../MediaEncoder
       - name: Build MediaEncoder
         working-directory: build
-        run: cmake --build . --config Release
+        run: |
+          cmake --build . --config Release
 
       - name: Upload .dylib as Artifact
         uses: actions/upload-artifact@v4
