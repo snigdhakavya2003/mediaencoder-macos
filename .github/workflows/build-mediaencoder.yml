@@ -10,46 +10,34 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg
-        run: brew install ffmpeg
+      - name: Install FFmpeg and dependencies
+        run: |
+          brew install pkg-config ffmpeg
+          brew link --overwrite ffmpeg
 
       - name: Set PKG_CONFIG_PATH
-        run: echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
+        run: |
+          echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
 
-
-
-      - name: Debug FFmpeg path
+      - name: Debug FFmpeg pkg-config
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          ls $PKG_CONFIG_PATH
-          pkg-config --modversion libavcodec
-
+          ls "$PKG_CONFIG_PATH"
+          pkg-config --modversion libavcodec || echo "libavcodec not found"
 
       - name: Create build directory
         run: mkdir -p build
+
       - name: Configure with CMake
         working-directory: build
-        env:
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
         run: cmake ../MediaEncoder
 
-      - name: Build
-        working-directory: build
-        run: cmake --build .
-
-      - name: Create build directory
-        run: |
-          mkdir -p build
-          cd build
-          cmake ../MediaEncoder
-
       - name: Build MediaEncoder
-        run: |
-          cd build
-          cmake --build . --config Release
+        working-directory: build
+        run: cmake --build . --config Release
 
       - name: Upload .dylib as Artifact
         uses: actions/upload-artifact@v4
