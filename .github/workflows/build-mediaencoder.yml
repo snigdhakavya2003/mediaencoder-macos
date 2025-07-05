@@ -1,33 +1,38 @@
-name: Build MediaEncoder on macOS
+name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build-macos:
+  build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - name: Install dependencies with homebrew
+      - name: Install dependencies
         run: |
-          brew uninstall ffmpeg || true
+          brew update
+          brew uninstall --ignore-dependencies ffmpeg || true
           brew tap homebrew-ffmpeg/ffmpeg
           brew install homebrew-ffmpeg/ffmpeg/ffmpeg --HEAD
-
           echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig" >> $GITHUB_ENV
 
+      - name: Create build directory
+        run: mkdir -p build
 
-      - name: Set up CMake
-        uses: jwlawson/actions-setup-cmake@v1.13
-        with:
-          cmake-version: '3.27.0'
+      - name: Configure with CMake
+        working-directory: build
+        env:
+          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
+        run: cmake ..
+
+      - name: Build
+        working-directory: build
+        run: cmake --build .
 
       - name: Create build directory
         run: |
