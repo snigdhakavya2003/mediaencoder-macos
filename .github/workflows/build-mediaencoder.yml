@@ -28,7 +28,7 @@ jobs:
         working-directory: build
         env:
           PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-        run: cmake ..
+        run: cmake ../MediaEncoder
 
       - name: Build
         working-directory: build
