@@ -2,7 +2,7 @@ name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]   # CHANGE this to your actual branch name if not "main"
   workflow_dispatch:
 
 jobs:
@@ -13,44 +13,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Download FFmpeg Mac static build
+      - name: Install dependencies (FFmpeg + pkg-config)
         run: |
-          mkdir -p deps
-          curl -L -o deps/ffmpeg.tar.xz https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip  # macOS static zip
-          cd deps
-          unzip ffmpeg.tar.xz -d ffmpeg-extracted
-          echo "FFMPEG_PATH=$(pwd)/ffmpeg-extracted" >> $GITHUB_ENV
+          brew install pkg-config
+          brew install ffmpeg
 
-      - name: Set paths for FFmpeg manually
+      - name: Verify pkg-config paths and FFmpeg modules
         run: |
-          echo "PKG_CONFIG_PATH=$FFMPEG_PATH/lib/pkgconfig" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=$FFMPEG_PATH" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$FFMPEG_PATH/lib" >> $GITHUB_ENV
-          echo "DYLD_LIBRARY_PATH=$FFMPEG_PATH/lib" >> $GITHUB_ENV
-
-      - name: Verify FFmpeg libraries
-        run: |
-          ls -l $FFMPEG_PATH/lib
-          ls -l $FFMPEG_PATH/include
+          echo "Verifying pkg-config FFmpeg modules..."
+          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
+          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig"
+          pkg-config --exists libavcodec && echo "✅ libavcodec found" || echo "❌ libavcodec not found"
+          pkg-config --exists libavformat && echo "✅ libavformat found" || echo "❌ libavformat not found"
+          pkg-config --exists libavutil && echo "✅ libavutil found" || echo "❌ libavutil not found"
+          pkg-config --exists libswscale && echo "✅ libswscale found" || echo "❌ libswscale not found"
+          pkg-config --exists libswresample && echo "✅ libswresample found" || echo "❌ libswresample not found"
 
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Configure with CMake
+      - name: Run CMake configuration
         working-directory: build
+        env:
+          PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig
         run: |
-          cmake ../MediaEncoder \
-            -DCMAKE_PREFIX_PATH=$FFMPEG_PATH \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_VERBOSE_MAKEFILE=ON
+          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build project
+      - name: Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload built dylib
+      - name: Upload built .dylib as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mediaencoder-macos-lib
+          name: MediaEncoder-macOS-lib
           path: |
             build/*.dylib
+            build/**/*.dylib
