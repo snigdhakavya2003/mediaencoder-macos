@@ -17,12 +17,12 @@ jobs:
 
       - name: Install dependencies with homebrew
         run: |
-          brew update
-          brew install pkg-config
-          brew install ffmpeg@4
-          # Link pkg-config files if needed
-          export PKG_CONFIG_PATH="$(brew --prefix ffmpeg)/lib/pkgconfig:$PKG_CONFIG_PATH"
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          brew uninstall ffmpeg || true
+          brew tap homebrew-ffmpeg/ffmpeg
+          brew install homebrew-ffmpeg/ffmpeg/ffmpeg --HEAD
+
+          echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig" >> $GITHUB_ENV
+
 
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1.13
