@@ -13,42 +13,39 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg and dependencies
+      - name: Install dependencies (pkg-config + FFmpeg)
         run: |
-          brew update
           brew install pkg-config
-          brew reinstall ffmpeg --build-from-source
+          brew install ffmpeg
 
-      - name: Set environment variables for pkg-config and CMake
+      - name: Set environment for pkg-config
         run: |
           echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
           echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg" >> $GITHUB_ENV
 
-      - name: Debug: Show installed pkg-config FFmpeg files
+      - name: Debug FFmpeg pkg-config files
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || true
-          pkg-config --modversion libavcodec || true
-          pkg-config --cflags --libs libavcodec libavformat libavutil libswscale libswresample || true
+          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || echo "pkgconfig not found"
+          pkg-config --list-all | grep av || echo "FFmpeg libs not listed"
 
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Configure with CMake
+      - name: Run CMake configuration
         working-directory: build
         env:
-          PKG_CONFIG_PATH: /opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
-          CMAKE_PREFIX_PATH: /opt/homebrew/opt/ffmpeg
+          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
+          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
         run: |
           cmake ../MediaEncoder \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DPKG_CONFIG_EXECUTABLE=/opt/homebrew/bin/pkg-config
+            -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build MediaEncoder
+      - name: Build project
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload built .dylib as artifact
+      - name: Upload built .dylib
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
