@@ -33,7 +33,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix ffmpeg)"
+          cmake ../MediaEncoder
 
       - name: Build MediaEncoder
         run: |
