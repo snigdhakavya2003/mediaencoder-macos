@@ -2,7 +2,7 @@ name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -13,41 +13,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Download FFmpeg shared SDK (BtbN)
+      - name: Download FFmpeg Mac static build
         run: |
-          curl -LO https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-n6.1-latest-macos64-shared.zip
-          unzip ffmpeg-n6.1-latest-macos64-shared.zip
-          mv ffmpeg-n6.1-* ffmpeg
+          mkdir -p deps
+          curl -L -o deps/ffmpeg.tar.xz https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip  # macOS static zip
+          cd deps
+          unzip ffmpeg.tar.xz -d ffmpeg-extracted
+          echo "FFMPEG_PATH=$(pwd)/ffmpeg-extracted" >> $GITHUB_ENV
 
-      - name: Set FFmpeg environment paths
+      - name: Set paths for FFmpeg manually
         run: |
-          echo "PKG_CONFIG_PATH=$PWD/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=$PWD/ffmpeg" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$FFMPEG_PATH/lib/pkgconfig" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$FFMPEG_PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$FFMPEG_PATH/lib" >> $GITHUB_ENV
+          echo "DYLD_LIBRARY_PATH=$FFMPEG_PATH/lib" >> $GITHUB_ENV
 
-      - name: Debug: Verify FFmpeg presence
+      - name: Verify FFmpeg libraries
         run: |
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          ls ffmpeg/lib/pkgconfig
-          pkg-config --list-all | grep av
+          ls -l $FFMPEG_PATH/lib
+          ls -l $FFMPEG_PATH/include
 
       - name: Create build directory
         run: mkdir -p build
 
       - name: Configure with CMake
         working-directory: build
-        env:
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
-        run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake ../MediaEncoder \
+            -DCMAKE_PREFIX_PATH=$FFMPEG_PATH \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_VERBOSE_MAKEFILE=ON
 
       - name: Build project
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload built .dylib
+      - name: Upload built dylib
         uses: actions/upload-artifact@v4
         with:
-          name: MediaEncoder-macOS-lib
+          name: mediaencoder-macos-lib
           path: |
             build/*.dylib
-            build/**/*.dylib
