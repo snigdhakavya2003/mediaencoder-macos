@@ -5,7 +5,15 @@
 #include <stdexcept>
 #include <cstring>
 #include <memory>
-#include <ffmpeg/avformat.h>
+extern "C" {
+    #include <libavformat/avformat.h>
+    #include <libavcodec/avcodec.h>
+    #include <libswscale/swscale.h>
+    #include <libswresample/swresample.h>
+    #include <libavutil/opt.h>
+    #include <libavutil/imgutils.h>
+    #include <libavutil/channel_layout.h>
+}
 
 namespace MediaEncoder
 {
