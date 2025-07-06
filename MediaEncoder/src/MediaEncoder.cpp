@@ -1,4 +1,4 @@
-cpp
+
 #include "MediaEncoder.h"
 #include <vector>
 #include <string>

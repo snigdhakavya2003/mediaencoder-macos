@@ -1,4 +1,3 @@
-cpp
 #include "AudioFrame.h"
 #include <stdexcept>
 #include <cstring>

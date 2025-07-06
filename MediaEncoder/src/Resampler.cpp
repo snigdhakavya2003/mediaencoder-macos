@@ -1,4 +1,4 @@
-cpp
+
 #include "Resampler.h"
 #include <stdexcept>
 #include <cstdint>

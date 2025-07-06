@@ -1,4 +1,4 @@
-cpp
+
 #include <stdexcept>
 #include <cstdint>
 #include <array>

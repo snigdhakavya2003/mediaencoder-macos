@@ -1,4 +1,4 @@
-cpp
+
 #include "MediaWriter.h"
 #include <cstdio>
 #include <cstdint>
