@@ -23,7 +23,7 @@ jobs:
           echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
           echo "CMAKE_PREFIX_PATH=$(brew --prefix ffmpeg)" >> $GITHUB_ENV
 
-      - name: Debug: Show FFmpeg pkg-config files
+      - name: "Debug: Show FFmpeg pkg-config files"
         run: |
           echo "PKG_CONFIG_PATH=${{ env.PKG_CONFIG_PATH }}"
           ls "${{ env.PKG_CONFIG_PATH }}" || echo "⚠️ Path not found"
