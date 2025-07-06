@@ -2,7 +2,7 @@ name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master ]  # Ensure your branch is named "master"
   workflow_dispatch:
 
 jobs:
@@ -10,48 +10,37 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repository
+      - name: 📥 Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg and pkg-config
+      - name: 🧰 Install FFmpeg with pkg-config support
         run: |
           brew update
-          brew reinstall pkg-config
-          brew reinstall ffmpeg
+          brew install pkg-config
+          brew uninstall --ignore-dependencies ffmpeg || true
+          brew install ffmpeg
 
-      - name: Set environment variables
+      - name: 🔍 Verify FFmpeg pkg-config availability
         run: |
           echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=/opt/homebrew/opt/ffmpeg" >> $GITHUB_ENV
-          echo "PKG_CONFIG=/opt/homebrew/bin/pkg-config" >> $GITHUB_ENV
-          echo "PATH=/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
+          export PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
+          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig
+          pkg-config --modversion libavcodec || echo "❌ libavcodec not found"
 
-      - name: "Debug: Show FFmpeg module visibility"
-        run: |
-          export PKG_CONFIG_PATH="/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig"
-          export PKG_CONFIG=/opt/homebrew/bin/pkg-config
-          echo "Using pkg-config at: $(which pkg-config)"
-          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-          echo "Available FFmpeg modules:"
-          pkg-config --list-all | grep -E 'av(codec|format|util)|sw(scale|resample)'
-
-      - name: Create build directory
+      - name: 🏗️ Create build directory
         run: mkdir -p build
 
-      - name: Configure with CMake
+      - name: ⚙️ Run CMake configuration
         working-directory: build
         env:
           PKG_CONFIG_PATH: /opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
-          CMAKE_PREFIX_PATH: /opt/homebrew/opt/ffmpeg
-          PKG_CONFIG: /opt/homebrew/bin/pkg-config
-        run: |
-          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON
+        run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build project
+      - name: 🧱 Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload .dylib as artifact
+      - name: 📦 Upload .dylib as artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
