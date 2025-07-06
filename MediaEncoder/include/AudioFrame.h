@@ -20,9 +20,8 @@ namespace MediaEncoder
         AVFrame* m_avFrame;
         bool m_disposed;
         int m_channels;
-        uint64_t m_channelLayout;
 
-        void CheckIfDisposed()
+        void CheckIfDisposed() const
         {
             if (m_disposed)
                 throw std::runtime_error("The object was already disposed.");
@@ -32,8 +31,6 @@ namespace MediaEncoder
         AudioFrame(int sampleRate, int channels, AVSampleFormat sampleFormat, int samples)
             : m_disposed(false), m_channels(channels)
         {
-            m_channelLayout = av_get_default_channel_layout(channels);
-
             m_avFrame = av_frame_alloc();
             if (!m_avFrame)
                 throw std::runtime_error("Failed to allocate AVFrame.");
@@ -42,17 +39,17 @@ namespace MediaEncoder
             m_avFrame->format = static_cast<int>(sampleFormat);
             m_avFrame->nb_samples = samples;
 
-            // Use AVChannelLayout instead of deprecated fields
+            // Use new AVChannelLayout API
             if (av_channel_layout_default(&m_avFrame->ch_layout, channels) < 0)
             {
                 av_frame_free(&m_avFrame);
-                throw std::runtime_error("Failed to set channel layout.");
+                throw std::runtime_error("Failed to set default channel layout.");
             }
 
             if (av_frame_get_buffer(m_avFrame, 0) < 0)
             {
                 av_frame_free(&m_avFrame);
-                throw std::runtime_error("Failed to allocate frame buffer.");
+                throw std::runtime_error("Failed to allocate audio buffer.");
             }
         }
 
@@ -69,7 +66,8 @@ namespace MediaEncoder
         void FillFrame(const uint8_t* src)
         {
             CheckIfDisposed();
-            int bufferSize = av_samples_get_buffer_size(nullptr, m_channels, m_avFrame->nb_samples, static_cast<AVSampleFormat>(m_avFrame->format), 0);
+            int bufferSize = av_samples_get_buffer_size(nullptr, m_channels, m_avFrame->nb_samples,
+                                                        static_cast<AVSampleFormat>(m_avFrame->format), 0);
             if (bufferSize > 0)
             {
                 std::memcpy(m_avFrame->data[0], src, bufferSize);
@@ -79,32 +77,33 @@ namespace MediaEncoder
         void ClearFrame()
         {
             CheckIfDisposed();
-            int bufferSize = av_samples_get_buffer_size(nullptr, m_channels, m_avFrame->nb_samples, static_cast<AVSampleFormat>(m_avFrame->format), 0);
+            int bufferSize = av_samples_get_buffer_size(nullptr, m_channels, m_avFrame->nb_samples,
+                                                        static_cast<AVSampleFormat>(m_avFrame->format), 0);
             if (bufferSize > 0)
             {
                 std::memset(m_avFrame->data[0], 0, bufferSize);
             }
         }
 
-        int SampleRate()
+        int SampleRate() const
         {
             CheckIfDisposed();
             return m_avFrame->sample_rate;
         }
 
-        int Channels()
+        int Channels() const
         {
             CheckIfDisposed();
             return m_channels;
         }
 
-        int Samples()
+        int Samples() const
         {
             CheckIfDisposed();
             return m_avFrame->nb_samples;
         }
 
-        std::vector<int> LineSize()
+        std::vector<int> LineSize() const
         {
             CheckIfDisposed();
             std::vector<int> lineSizes(AV_NUM_DATA_POINTERS);
@@ -115,7 +114,7 @@ namespace MediaEncoder
             return lineSizes;
         }
 
-        std::vector<uint8_t*> DataPointer()
+        std::vector<uint8_t*> DataPointer() const
         {
             CheckIfDisposed();
             std::vector<uint8_t*> dataPointers(AV_NUM_DATA_POINTERS);
@@ -126,10 +125,16 @@ namespace MediaEncoder
             return dataPointers;
         }
 
-        AVSampleFormat SampleFormat()
+        AVSampleFormat SampleFormat() const
         {
             CheckIfDisposed();
             return static_cast<AVSampleFormat>(m_avFrame->format);
+        }
+
+        AVFrame* NativePointer() const
+        {
+            CheckIfDisposed();
+            return m_avFrame;
         }
     };
 }
