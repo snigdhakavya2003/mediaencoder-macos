@@ -50,7 +50,7 @@ static int WriteFrame(AVFormatContext* fmtCtx, AVCodecContext* codecCtx, AVStrea
 
     while (ret >= 0) {
         AVPacket pkt;
-        av_init_packet(&pkt);
+        av_new_packet(&pkt, 0);
         pkt.data = nullptr;
         pkt.size = 0;
 
@@ -134,10 +134,9 @@ void MediaWriter::Open(const std::string& url, const std::string& format) {
         AVCodecContext* ctx = m_data->audioCtx;
 
         ctx->codec_id = codec->id;
-        ctx->sample_fmt = codec->sample_fmts ? codec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
-        ctx->sample_rate = 44100;
-        ctx->channel_layout = AV_CH_LAYOUT_STEREO;
-        ctx->channels = av_get_channel_layout_nb_channels(ctx->channel_layout);
+        if (av_channel_layout_copy(&m_data->audioFrame->ch_layout, &ctx->ch_layout) < 0) {
+            throw std::runtime_error("Failed to copy channel layout to frame");
+        }
         ctx->bit_rate = m_audioBitrate;
         ctx->time_base = {1, ctx->sample_rate};
 
@@ -153,7 +152,9 @@ void MediaWriter::Open(const std::string& url, const std::string& format) {
         m_data->audioFrame = av_frame_alloc();
         m_data->audioFrame->format = ctx->sample_fmt;
         m_data->audioFrame->sample_rate = ctx->sample_rate;
-        m_data->audioFrame->channel_layout = ctx->channel_layout;
+        if (av_channel_layout_copy(&m_data->audioFrame->ch_layout, &ctx->ch_layout) < 0) {
+            throw std::runtime_error("Failed to copy channel layout");
+        }
         m_data->audioFrame->nb_samples = ctx->frame_size;
         av_frame_get_buffer(m_data->audioFrame, 0);
     }

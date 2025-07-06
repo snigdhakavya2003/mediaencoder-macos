@@ -39,10 +39,10 @@ private:
             }
 
             AVChannelLayout srcLayout, dstLayout;
-            if (av_channel_layout_default(&dstLayout, destChannels) < 0 ||
-                av_channel_layout_default(&srcLayout, srcChannels) < 0) {
-                throw std::runtime_error("Failed to get default channel layout");
-            }
+
+            // ✅ FFmpeg 6+ compliant - no return value
+            av_channel_layout_default(&dstLayout, destChannels);
+            av_channel_layout_default(&srcLayout, srcChannels);
 
             m_swrContext = swr_alloc();
             if (!m_swrContext) {
