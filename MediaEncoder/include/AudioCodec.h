@@ -10,7 +10,6 @@ namespace MediaEncoder {
     // Enum class for audio codecs
     enum class AudioCodec {
         None = AV_CODEC_ID_NONE,                  ///< No codec
-        Default = AV_CODEC_ID_DEFAULT,            ///< Default codec
         Pcm16 = AV_CODEC_ID_PCM_S16LE,            ///< Pulse Code Modulation (16-bit)
         AmrNarrowBand = AV_CODEC_ID_AMR_NB,       ///< Adaptive Multi-Rate Narrowband
         AmrWideBand = AV_CODEC_ID_AMR_WB,         ///< Adaptive Multi-Rate Wideband
@@ -91,7 +90,7 @@ namespace MediaEncoder {
         DsdLsbf = AV_CODEC_ID_DSD_LSBF,            ///< DSD LSBF
         DsdMsbf = AV_CODEC_ID_DSD_MSBF,            ///< DSD MSBF
         DsdLsbfPlanar = AV_CODEC_ID_DSD_LSBF_PLANAR, ///< DSD LSBF Planar
-        DsdMsbfPlanner = AV_CODEC_ID_DSD_MSBF_PLANAR, ///< DSD MSBF Planar
+        DsdMsbfPlanar = AV_CODEC_ID_DSD_MSBF_PLANAR, ///< DSD MSBF Planar
         FourGv = AV_CODEC_ID_FOURGV,               ///< 4GV
         InterplayAcm = AV_CODEC_ID_INTERPLAY_ACM,  ///< Interplay ACM
         Xma1 = AV_CODEC_ID_XMA1,                   ///< XMA1
@@ -99,15 +98,12 @@ namespace MediaEncoder {
         Dst = AV_CODEC_ID_DST                       ///< DST
     };
 
-#pragma region Backward Compatibility
-    // Aliases for backward compatibility
-    enum class BackwardCompatibility {
-        MP3 = AudioCodec::Mp3,
-        AAC = AudioCodec::Aac,
-        M4A = AudioCodec::MP4Als,
-        MP4ALS = AudioCodec::MP4Als
-        // Add more aliases as needed
-    };
-#pragma endregion
+// Instead of enum class BackwardCompatibility
+namespace BackwardCompatibility {
+    constexpr AudioCodec MP3 = AudioCodec::Mp3;
+    constexpr AudioCodec AAC = AudioCodec::Aac;
+    constexpr AudioCodec M4A = AudioCodec::MP4Als;
+    constexpr AudioCodec MP4ALS = AudioCodec::MP4Als;
+}
 
 } // namespace MediaEncoder

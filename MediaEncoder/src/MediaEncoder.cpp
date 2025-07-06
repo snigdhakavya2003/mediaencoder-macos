@@ -1,52 +1,57 @@
-
 #include "MediaEncoder.h"
+
 #include <vector>
 #include <string>
 #include <stdexcept>
 #include <cstring>
 #include <memory>
-#include <ffmpeg/avformat.h>
 
-namespace MediaEncoder
+extern "C" {
+#include <libavformat/avformat.h>
+}
+
+namespace MediaEncoder {
+
+std::vector<std::string> MediaFormat::GetAllFormatLongNames()
 {
-    std::vector<std::string> MediaFormat::GetAllFormatLongNames()
-    {
-        std::vector<std::string> ret;
-        const AVOutputFormat* fmt = nullptr;
-        void* i = nullptr;
+    std::vector<std::string> ret;
+    const AVOutputFormat* fmt = nullptr;
+    void* i = nullptr;
 
-        while ((fmt = av_muxer_iterate(&i)))
-        {
-            ret.emplace_back(fmt->long_name);
-            ret.emplace_back(fmt->name);
-        }
-        return ret;
+    while ((fmt = av_muxer_iterate(&i)))
+    {
+        if (fmt->long_name) ret.emplace_back(fmt->long_name);
+        else if (fmt->name) ret.emplace_back(fmt->name);
     }
 
-    std::string MediaFormat::GetFormatExtensions(const std::string& format)
-    {
-        const AVOutputFormat* fmt = av_guess_format(format.c_str(), nullptr, nullptr);
-        return fmt ? fmt->extensions : "";
-    }
+    return ret;
+}
 
-    std::string MediaFormat::GetFormatLongName(const std::string& format)
-    {
-        const AVOutputFormat* fmt = av_guess_format(format.c_str(), nullptr, nullptr);
-        return fmt ? fmt->long_name : "";
-    }
+std::string MediaFormat::GetFormatExtensions(const std::string& format)
+{
+    const AVOutputFormat* fmt = av_guess_format(format.c_str(), nullptr, nullptr);
+    return fmt && fmt->extensions ? fmt->extensions : "";
+}
 
-    void MediaFormat::GetFormatInfo(const std::string& format, std::string& longName, std::string& extensions)
+std::string MediaFormat::GetFormatLongName(const std::string& format)
+{
+    const AVOutputFormat* fmt = av_guess_format(format.c_str(), nullptr, nullptr);
+    return fmt && fmt->long_name ? fmt->long_name : "";
+}
+
+void MediaFormat::GetFormatInfo(const std::string& format, std::string& longName, std::string& extensions)
+{
+    const AVOutputFormat* fmt = av_guess_format(format.c_str(), nullptr, nullptr);
+    if (fmt)
     {
-        const AVOutputFormat* fmt = av_guess_format(format.c_str(), nullptr, nullptr);
-        if (fmt)
-        {
-            longName = fmt->long_name;
-            extensions = fmt->extensions;
-        }
-        else
-        {
-            longName.clear();
-            extensions.clear();
-        }
+        longName = fmt->long_name ? fmt->long_name : "";
+        extensions = fmt->extensions ? fmt->extensions : "";
     }
+    else
+    {
+        longName.clear();
+        extensions.clear();
+    }
+}
+
 } // namespace MediaEncoder

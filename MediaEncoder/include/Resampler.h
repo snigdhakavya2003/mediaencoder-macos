@@ -1,11 +1,15 @@
-
 #pragma once
 
 #include <stdexcept>
 #include <cstdint>
 #include <memory>
+
+extern "C" {
 #include <libswresample/swresample.h>
 #include <libavutil/samplefmt.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/mem.h>
+}
 
 namespace MediaEncoder {
 
@@ -16,11 +20,11 @@ private:
     AVSampleFormat m_srcSampleFormat, m_destSampleFormat;
     int m_srcSampleRate, m_destSampleRate;
     uint8_t* m_resampledBuffer;
-    int m_resampledBufferSampleSize, m_resampledBufferSize;
+    int m_resampledBufferSize;
 
     void SwrContextValidation(int srcChannels, AVSampleFormat srcSampleFormat, int srcSampleRate,
                               int destChannels, AVSampleFormat destSampleFormat, int destSampleRate) {
-        // Validate and reinitialize SwrContext if parameters change
+        // Only reinitialize if configuration changed
         if (m_srcChannels != srcChannels || m_srcSampleFormat != srcSampleFormat || m_srcSampleRate != srcSampleRate ||
             m_destChannels != destChannels || m_destSampleFormat != destSampleFormat || m_destSampleRate != destSampleRate) {
 
@@ -35,10 +39,12 @@ private:
                 swr_free(&m_swrContext);
             }
 
-            m_swrContext = swr_alloc_set_opts(nullptr,
-                av_get_default_channel_layout(m_destChannels), m_destSampleFormat, m_destSampleRate,
-                av_get_default_channel_layout(m_srcChannels), m_srcSampleFormat, m_srcSampleRate,
-                0, nullptr);
+            m_swrContext = swr_alloc_set_opts(
+                nullptr,
+                av_get_default_channel_layout(destChannels), destSampleFormat, destSampleRate,
+                av_get_default_channel_layout(srcChannels), srcSampleFormat, srcSampleRate,
+                0, nullptr
+            );
 
             if (!m_swrContext || swr_init(m_swrContext) < 0) {
                 throw std::runtime_error("Failed to initialize SwrContext");
@@ -47,11 +53,11 @@ private:
     }
 
 public:
-    Resampler() 
+    Resampler()
         : m_swrContext(nullptr), m_srcChannels(0), m_destChannels(0),
           m_srcSampleFormat(AV_SAMPLE_FMT_NONE), m_destSampleFormat(AV_SAMPLE_FMT_NONE),
           m_srcSampleRate(0), m_destSampleRate(0), m_resampledBuffer(nullptr),
-          m_resampledBufferSampleSize(0), m_resampledBufferSize(0) {}
+          m_resampledBufferSize(0) {}
 
     ~Resampler() {
         if (m_swrContext) {
@@ -67,32 +73,47 @@ public:
         SwrContextValidation(srcChannels, srcSampleFormat, srcSampleRate, destChannels, destSampleFormat, destSampleRate);
     }
 
-    void Resample(uint8_t** srcData, int srcSamples, uint8_t** destData, int& destSamples) {
+    uint8_t* Resample(const uint8_t** srcData, int srcSamples, int& destSamples) {
         if (!m_swrContext) {
             throw std::runtime_error("SwrContext is not initialized");
         }
 
-        int requiredDestSamples = swr_get_out_samples(m_swrContext, srcSamples);
-        int requiredDestBufferSize = av_samples_get_buffer_size(nullptr, m_destChannels, requiredDestSamples,
-                                                                m_destSampleFormat, 1);
-        if (m_resampledBufferSize < requiredDestBufferSize) {
+        // Estimate output sample count
+        int maxDstSamples = swr_get_out_samples(m_swrContext, srcSamples);
+
+        int bufferSize = av_samples_get_buffer_size(
+            nullptr, m_destChannels, maxDstSamples, m_destSampleFormat, 1
+        );
+
+        if (bufferSize < 0) {
+            throw std::runtime_error("Failed to get output buffer size");
+        }
+
+        if (m_resampledBufferSize < bufferSize) {
             if (m_resampledBuffer) {
                 av_free(m_resampledBuffer);
             }
-            m_resampledBuffer = static_cast<uint8_t*>(av_malloc(requiredDestBufferSize));
-            m_resampledBufferSize = requiredDestBufferSize;
+            m_resampledBuffer = static_cast<uint8_t*>(av_malloc(bufferSize));
+            if (!m_resampledBuffer) {
+                throw std::runtime_error("Failed to allocate output buffer");
+            }
+            m_resampledBufferSize = bufferSize;
         }
 
-        const uint8_t* pSrcBuffer = *srcData;
-        uint8_t* pDestBuffer = m_resampledBuffer;
-        destSamples = swr_convert(m_swrContext, &pDestBuffer, m_resampledBufferSampleSize, &pSrcBuffer, srcSamples);
+        destSamples = swr_convert(
+            m_swrContext,
+            &m_resampledBuffer, maxDstSamples,
+            srcData, srcSamples
+        );
+
         if (destSamples < 0) {
             throw std::runtime_error("swr_convert() failed");
         }
-        *destData = m_resampledBuffer;
+
+        return m_resampledBuffer;
     }
 
-    int EstimateOutputSamples(int srcSamples) {
+    int EstimateOutputSamples(int srcSamples) const {
         if (!m_swrContext) {
             throw std::runtime_error("SwrContext is not initialized");
         }

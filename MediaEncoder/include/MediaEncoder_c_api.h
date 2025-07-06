@@ -1,4 +1,3 @@
-
 #pragma once
 
 #ifdef __cplusplus
@@ -10,62 +9,91 @@ typedef struct MediaWriterHandle MediaWriterHandle;
 typedef struct VideoFrameHandle VideoFrameHandle;
 typedef struct AudioFrameHandle AudioFrameHandle;
 
-// Enum definitions for video codecs
+// Video codec enumeration
 typedef enum {
+    VIDEO_CODEC_NONE = 0,
     VIDEO_CODEC_H264,
     VIDEO_CODEC_H265,
-    // Add more codecs as needed
+    VIDEO_CODEC_MPEG4,
+    VIDEO_CODEC_VP8,
+    VIDEO_CODEC_VP9
+    // Add more if needed (matches MediaEncoder::VideoCodec)
 } VideoCodec;
 
-// Enum definitions for audio codecs
+// Audio codec enumeration
 typedef enum {
+    AUDIO_CODEC_NONE = 0,
     AUDIO_CODEC_AAC,
     AUDIO_CODEC_MP3,
-    // Add more codecs as needed
+    AUDIO_CODEC_OPUS,
+    AUDIO_CODEC_PCM_S16LE
+    // Add more if needed (matches MediaEncoder::AudioCodec)
 } AudioCodec;
 
 /**
- * Creates a new MediaWriter instance.
- * @param filename The name of the file to create.
- * @param videoCodec The codec to use for video encoding.
- * @param audioCodec The codec to use for audio encoding.
- * @return A pointer to the MediaWriterHandle on success, NULL on failure.
+ * Creates and initializes a new MediaWriter instance.
+ * 
+ * @param filename        Output file path.
+ * @param format          Format name (e.g., "mp4", "mov").
+ * @param width           Video width.
+ * @param height          Video height.
+ * @param fps             Frames per second.
+ * @param videoCodec      Video codec to use.
+ * @param videoBitrate    Video bitrate in bps.
+ * @param audioCodec      Audio codec to use.
+ * @param audioBitrate    Audio bitrate in bps.
+ * @return                Handle to the MediaWriter, or NULL on failure.
  */
-MediaWriterHandle* MediaWriter_Create(const char* filename, VideoCodec videoCodec, AudioCodec audioCodec);
+MediaWriterHandle* MediaWriter_Create(
+    const char* filename,
+    const char* format,
+    int width,
+    int height,
+    int fps,
+    VideoCodec videoCodec,
+    int videoBitrate,
+    AudioCodec audioCodec,
+    int audioBitrate
+);
 
 /**
- * Opens the MediaWriter for writing.
- * @param writer Handle to the MediaWriter.
- * @return 0 on success, non-zero on failure.
+ * Opens the MediaWriter. Must be called before encoding frames.
+ * 
+ * @param writer    MediaWriter handle.
+ * @return          0 on success, non-zero on error.
  */
 int MediaWriter_Open(MediaWriterHandle* writer);
 
 /**
- * Closes the MediaWriter and finalizes the file.
- * @param writer Handle to the MediaWriter.
- * @return 0 on success, non-zero on failure.
- */
-int MediaWriter_Close(MediaWriterHandle* writer);
-
-/**
  * Encodes a video frame.
- * @param writer Handle to the MediaWriter.
- * @param frame Handle to the VideoFrame.
- * @return 0 on success, non-zero on failure.
+ * 
+ * @param writer    MediaWriter handle.
+ * @param frame     VideoFrame handle.
+ * @return          0 on success, non-zero on error.
  */
 int MediaWriter_EncodeVideoFrame(MediaWriterHandle* writer, VideoFrameHandle* frame);
 
 /**
  * Encodes an audio frame.
- * @param writer Handle to the MediaWriter.
- * @param frame Handle to the AudioFrame.
- * @return 0 on success, non-zero on failure.
+ * 
+ * @param writer    MediaWriter handle.
+ * @param frame     AudioFrame handle.
+ * @return          0 on success, non-zero on error.
  */
 int MediaWriter_EncodeAudioFrame(MediaWriterHandle* writer, AudioFrameHandle* frame);
 
 /**
- * Destroys the MediaWriter instance and frees resources.
- * @param writer Handle to the MediaWriter.
+ * Closes and finalizes the media file.
+ * 
+ * @param writer    MediaWriter handle.
+ * @return          0 on success, non-zero on error.
+ */
+int MediaWriter_Close(MediaWriterHandle* writer);
+
+/**
+ * Frees the MediaWriter instance and associated resources.
+ * 
+ * @param writer    MediaWriter handle to free.
  */
 void MediaWriter_Destroy(MediaWriterHandle* writer);
 

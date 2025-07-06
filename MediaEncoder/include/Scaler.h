@@ -1,4 +1,3 @@
-
 #pragma once
 
 extern "C" {
@@ -10,6 +9,8 @@ extern "C" {
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
+
+namespace MediaEncoder {
 
 class Scaler {
 public:
@@ -28,7 +29,6 @@ public:
             throw std::runtime_error("Failed to ensure scaling context.");
         }
 
-        // Perform the scaling operation
         sws_scale(sws_ctx, &src, &srcStride, 0, srcH, &dst, &dstStride);
         return true;
     }
@@ -41,7 +41,6 @@ public:
             throw std::runtime_error("Failed to ensure scaling context.");
         }
 
-        // Perform the scaling operation
         sws_scale(sws_ctx, srcData, srcStride, 0, srcH, dstData, dstStride);
         return true;
     }
@@ -64,7 +63,7 @@ private:
             currentSrcFmt != srcFmt || currentDstW != dstW ||
             currentDstH != dstH || currentDstFmt != dstFmt) {
 
-            ResetContext(); // Free existing context if parameters have changed
+            ResetContext();
 
             currentSrcW = srcW;
             currentSrcH = srcH;
@@ -83,3 +82,5 @@ private:
         return true;
     }
 };
+
+} // namespace MediaEncoder

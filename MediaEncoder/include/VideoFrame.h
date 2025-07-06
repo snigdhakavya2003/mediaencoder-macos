@@ -1,4 +1,3 @@
-
 #pragma once
 
 extern "C" {
@@ -11,6 +10,7 @@ extern "C" {
 #include <memory>
 #include <cstdint>
 #include <vector>
+#include <cstring> // optional, for future FillFrame copies
 
 namespace MediaEncoder {
 
@@ -20,15 +20,16 @@ private:
     bool m_disposed;
 
     void CheckIfDisposed() const {
-        if (m_disposed) {
+        if (m_disposed || !m_avFrame) {
             throw std::runtime_error("The object was already disposed.");
         }
     }
 
 public:
-    // Constructor from width/height and pixel format
-    VideoFrame(int width, int height, AVPixelFormat pixelFormat) : m_disposed(false) {
-        m_avFrame = av_frame_alloc();
+    // Constructor
+    VideoFrame(int width, int height, AVPixelFormat pixelFormat)
+        : m_avFrame(av_frame_alloc()), m_disposed(false)
+    {
         if (!m_avFrame) {
             throw std::runtime_error("Could not allocate AVFrame");
         }
@@ -45,17 +46,18 @@ public:
     }
 
     // Copy constructor
-    VideoFrame(const VideoFrame& other) : m_disposed(false) {
-        CheckIfDisposed();
-
-        m_avFrame = av_frame_clone(other.m_avFrame);
+    VideoFrame(const VideoFrame& other)
+        : m_avFrame(av_frame_clone(other.m_avFrame)), m_disposed(false)
+    {
         if (!m_avFrame) {
             throw std::runtime_error("Failed to clone AVFrame");
         }
     }
 
     // Move constructor
-    VideoFrame(VideoFrame&& other) noexcept : m_avFrame(other.m_avFrame), m_disposed(other.m_disposed) {
+    VideoFrame(VideoFrame&& other) noexcept
+        : m_avFrame(other.m_avFrame), m_disposed(other.m_disposed)
+    {
         other.m_avFrame = nullptr;
         other.m_disposed = true;
     }
@@ -67,8 +69,8 @@ public:
     void Dispose() {
         if (!m_disposed) {
             if (m_avFrame) {
-                av_freep(&m_avFrame->data[0]);
-                av_frame_free(&m_avFrame);
+                av_freep(&m_avFrame->data[0]);  // Free the image buffer
+                av_frame_free(&m_avFrame);      // Free the frame itself
             }
             m_disposed = true;
         }
@@ -112,7 +114,6 @@ public:
         return result;
     }
 
-    // Fill frame from external buffer (interleaved)
     void FillFrame(uint8_t* srcData, int srcStride) {
         CheckIfDisposed();
         av_image_fill_arrays(m_avFrame->data, m_avFrame->linesize, srcData,

@@ -5,17 +5,22 @@
 
 namespace MediaEncoder
 {
-    AudioFrame::AudioFrame(int sampleRate, int channels, MediaEncoder::SampleFormat sampleFormat, int samples)
-        : m_disposed(false), m_avFrame(av_frame_alloc())
+    AudioFrame::AudioFrame(int sampleRate, int channels, AVSampleFormat sampleFormat, int samples)
+        : m_disposed(false), m_channels(channels), m_channelLayout(av_get_default_channel_layout(channels)), m_avFrame(av_frame_alloc())
     {
         if (!m_avFrame) {
             throw std::runtime_error("Failed to allocate AVFrame");
         }
 
         m_avFrame->format = static_cast<int>(sampleFormat);
-        m_avFrame->channel_layout = av_get_default_channel_layout(channels);
         m_avFrame->sample_rate = sampleRate;
         m_avFrame->nb_samples = samples;
+
+        // Set the new-style channel layout
+        if (av_channel_layout_default(&m_avFrame->ch_layout, channels) < 0) {
+            av_frame_free(&m_avFrame);
+            throw std::runtime_error("Failed to set channel layout");
+        }
 
         if (av_frame_get_buffer(m_avFrame, 0) < 0) {
             av_frame_free(&m_avFrame);
@@ -23,11 +28,16 @@ namespace MediaEncoder
         }
     }
 
-    void AudioFrame::FillFrame(void* src)
+    void AudioFrame::FillFrame(const uint8_t* src)
     {
         CheckIfDisposed();
-        int bufferSize = av_samples_get_buffer_size(&m_avFrame->linesize, m_avFrame->channels, m_avFrame->nb_samples,
-                                                    static_cast<AVSampleFormat>(m_avFrame->format), 0);
+        int bufferSize = av_samples_get_buffer_size(
+            &m_avFrame->linesize,
+            m_channels,
+            m_avFrame->nb_samples,
+            static_cast<AVSampleFormat>(m_avFrame->format),
+            0);
+
         if (bufferSize > 0) {
             std::memcpy(m_avFrame->data[0], src, bufferSize);
         } else {
@@ -38,8 +48,13 @@ namespace MediaEncoder
     void AudioFrame::ClearFrame()
     {
         CheckIfDisposed();
-        int bufferSize = av_samples_get_buffer_size(&m_avFrame->linesize, m_avFrame->channels, m_avFrame->nb_samples,
-                                                    static_cast<AVSampleFormat>(m_avFrame->format), 0);
+        int bufferSize = av_samples_get_buffer_size(
+            &m_avFrame->linesize,
+            m_channels,
+            m_avFrame->nb_samples,
+            static_cast<AVSampleFormat>(m_avFrame->format),
+            0);
+
         if (bufferSize > 0) {
             std::memset(m_avFrame->data[0], 0, bufferSize);
         } else {
@@ -52,6 +67,7 @@ namespace MediaEncoder
         if (m_avFrame) {
             av_frame_free(&m_avFrame);
         }
+        m_disposed = true;
     }
 
     void AudioFrame::CheckIfDisposed() const
@@ -65,4 +81,4 @@ namespace MediaEncoder
     {
         return m_avFrame;
     }
-} // namespace MediaEncoder
+}

@@ -1,13 +1,16 @@
-
 #pragma once
 
 #include <string>
 #include <vector>
 #include <stdexcept>
 #include <cstring>
+
+extern "C" {
 #include <libavutil/frame.h>
 #include <libavutil/samplefmt.h>
+#include <libavutil/channel_layout.h>
 #include <libavutil/imgutils.h>
+}
 
 namespace MediaEncoder
 {
@@ -16,6 +19,8 @@ namespace MediaEncoder
     private:
         AVFrame* m_avFrame;
         bool m_disposed;
+        int m_channels;
+        uint64_t m_channelLayout;
 
         void CheckIfDisposed()
         {
@@ -25,20 +30,25 @@ namespace MediaEncoder
 
     public:
         AudioFrame(int sampleRate, int channels, AVSampleFormat sampleFormat, int samples)
-            : m_disposed(false)
+            : m_disposed(false), m_channels(channels)
         {
+            m_channelLayout = av_get_default_channel_layout(channels);
+
             m_avFrame = av_frame_alloc();
             if (!m_avFrame)
-            {
                 throw std::runtime_error("Failed to allocate AVFrame.");
-            }
 
             m_avFrame->sample_rate = sampleRate;
-            m_avFrame->channels = channels;
             m_avFrame->format = static_cast<int>(sampleFormat);
             m_avFrame->nb_samples = samples;
 
-            // Allocate buffer for audio data
+            // Use AVChannelLayout instead of deprecated fields
+            if (av_channel_layout_default(&m_avFrame->ch_layout, channels) < 0)
+            {
+                av_frame_free(&m_avFrame);
+                throw std::runtime_error("Failed to set channel layout.");
+            }
+
             if (av_frame_get_buffer(m_avFrame, 0) < 0)
             {
                 av_frame_free(&m_avFrame);
@@ -59,7 +69,7 @@ namespace MediaEncoder
         void FillFrame(const uint8_t* src)
         {
             CheckIfDisposed();
-            int bufferSize = av_samples_get_buffer_size(nullptr, m_avFrame->channels, m_avFrame->nb_samples, static_cast<AVSampleFormat>(m_avFrame->format), 0);
+            int bufferSize = av_samples_get_buffer_size(nullptr, m_channels, m_avFrame->nb_samples, static_cast<AVSampleFormat>(m_avFrame->format), 0);
             if (bufferSize > 0)
             {
                 std::memcpy(m_avFrame->data[0], src, bufferSize);
@@ -69,7 +79,11 @@ namespace MediaEncoder
         void ClearFrame()
         {
             CheckIfDisposed();
-            std::memset(m_avFrame->data[0], 0, av_samples_get_buffer_size(nullptr, m_avFrame->channels, m_avFrame->nb_samples, static_cast<AVSampleFormat>(m_avFrame->format), 0));
+            int bufferSize = av_samples_get_buffer_size(nullptr, m_channels, m_avFrame->nb_samples, static_cast<AVSampleFormat>(m_avFrame->format), 0);
+            if (bufferSize > 0)
+            {
+                std::memset(m_avFrame->data[0], 0, bufferSize);
+            }
         }
 
         int SampleRate()
@@ -81,7 +95,7 @@ namespace MediaEncoder
         int Channels()
         {
             CheckIfDisposed();
-            return av_get_channel_layout_nb_channels(m_avFrame->channel_layout);
+            return m_channels;
         }
 
         int Samples()
@@ -119,4 +133,3 @@ namespace MediaEncoder
         }
     };
 }
-

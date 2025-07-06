@@ -1,148 +1,95 @@
-
 #include "MediaWriter.h"
-#include <cstdio>
-#include <cstdint>
-#include <exception>
 #include <libavutil/frame.h>
 #include <libavutil/imgutils.h>
+#include <cstdio>
+#include <exception>
+#include <string>
+#include <memory>
+#include <cstring>
 
-typedef void* MediaWriterHandle;
+using namespace MediaEncoder;
 
-// Helper function to create an AVFrame from raw data
-AVFrame* MakeAVFrameFromRawData(const uint8_t* const* data, const int* linesize, int width, int height, AVPixelFormat pixelFormat) {
-    AVFrame* frame = av_frame_alloc();
-    if (!frame) {
-        fprintf(stderr, "Failed to allocate AVFrame\n");
+struct MediaWriterHandle {
+    std::unique_ptr<MediaWriter> writer;
+};
+
+// C API function implementations
+
+extern "C" {
+
+MediaWriterHandle* MediaWriter_Create(
+    const char* filename,
+    const char* format,
+    int width,
+    int height,
+    int fps,
+    VideoCodec videoCodec,
+    int videoBitrate,
+    AudioCodec audioCodec,
+    int audioBitrate)
+{
+    if (!filename || !format) return nullptr;
+
+    try {
+        auto handle = new MediaWriterHandle();
+        handle->writer = std::make_unique<MediaWriter>(
+            width, height,
+            fps, 1,  // timebase: fps/1
+            static_cast<AVCodecID>(videoCodec),
+            videoBitrate,
+            static_cast<AVCodecID>(audioCodec),
+            audioBitrate
+        );
+        handle->writer->Open(filename, format, false);  // false = don't force software
+        return handle;
+    } catch (const std::exception& ex) {
+        fprintf(stderr, "MediaWriter_Create failed: %s\n", ex.what());
         return nullptr;
     }
-    frame->format = pixelFormat;
-    frame->width = width;
-    frame->height = height;
-
-    if (av_frame_get_buffer(frame, 32) < 0) {
-        av_frame_free(&frame);
-        fprintf(stderr, "Failed to allocate frame buffer\n");
-        return nullptr;
-    }
-
-    // Copy data into the frame
-    for (int i = 0; i < 4; i++) {
-        frame->data[i] = const_cast<uint8_t*>(data[i]);
-        frame->linesize[i] = linesize[i];
-    }
-
-    return frame;
 }
 
-/**
- * Creates a new MediaWriter instance.
- * @param width The width of the video.
- * @param height The height of the video.
- * @param fps_num The numerator of the frame rate.
- * @param fps_den The denominator of the frame rate.
- * @param video_bitrate The video bitrate.
- * @param audio_bitrate The audio bitrate.
- * @return A pointer to the MediaWriterHandle on success, NULL on failure.
- */
-MediaWriterHandle MediaWriter_Create(int width, int height, int fps_num, int fps_den, int video_bitrate, int audio_bitrate) {
+int MediaWriter_Open(MediaWriterHandle* handle) {
+    if (!handle || !handle->writer) return -1;
+    // Already opened in Create
+    return 0;
+}
+
+int MediaWriter_EncodeVideoFrame(MediaWriterHandle* handle, VideoFrameHandle* frame) {
+    if (!handle || !frame || !handle->writer) return -1;
     try {
-        MediaWriter* writer = new MediaWriter(width, height, fps_num, fps_den, video_bitrate, audio_bitrate);
-        return reinterpret_cast<MediaWriterHandle>(writer);
+        handle->writer->EncodeVideoFrame(reinterpret_cast<AVFrame*>(frame));
+        return 0;
     } catch (const std::exception& e) {
-        fprintf(stderr, "Error creating MediaWriter: %s\n", e.what());
-        return nullptr;
+        fprintf(stderr, "EncodeVideoFrame failed: %s\n", e.what());
+        return -1;
     }
 }
 
-/**
- * Opens the MediaWriter for writing.
- * @param handle Handle to the MediaWriter.
- * @param url The URL of the media file to create.
- * @param format The format of the media file.
- * @param forceSoftwareEncoder Whether to force software encoding.
- * @return 0 on success, non-zero on failure.
- */
-bool MediaWriter_Open(MediaWriterHandle handle, const char* url, const char* format, bool forceSoftwareEncoder) {
-    if (!handle || !url || !format) {
-        fprintf(stderr, "Invalid parameters passed to MediaWriter_Open.\n");
-        return false;
-    }
+int MediaWriter_EncodeAudioFrame(MediaWriterHandle* handle, AudioFrameHandle* frame) {
+    if (!handle || !frame || !handle->writer) return -1;
     try {
-        MediaWriter* writer = reinterpret_cast<MediaWriter*>(handle);
-        writer->Open(url, format, forceSoftwareEncoder);
-        return true;
+        handle->writer->EncodeAudioFrame(reinterpret_cast<AVFrame*>(frame));
+        return 0;
     } catch (const std::exception& e) {
-        fprintf(stderr, "Error opening MediaWriter: %s\n", e.what());
-        return false;
+        fprintf(stderr, "EncodeAudioFrame failed: %s\n", e.what());
+        return -1;
     }
 }
 
-/**
- * Encodes a video frame.
- * @param handle Handle to the MediaWriter.
- * @param data Pointer to the raw video data.
- * @param linesize Pointer to the line sizes of the video data.
- */
-void MediaWriter_EncodeVideoFrame(MediaWriterHandle handle, const uint8_t* const* data, const int* linesize) {
-    if (!handle || !data || !linesize) {
-        fprintf(stderr, "Invalid parameters passed to MediaWriter_EncodeVideoFrame.\n");
-        return;
-    }
+int MediaWriter_Close(MediaWriterHandle* handle) {
+    if (!handle || !handle->writer) return -1;
     try {
-        MediaWriter* writer = reinterpret_cast<MediaWriter*>(handle);
-        AVFrame* frame = MakeAVFrameFromRawData(data, linesize, writer->GetWidth(), writer->GetHeight(), AV_PIX_FMT_YUV420P);
-        if (frame) {
-            writer->EncodeVideoFrame(frame);
-            av_frame_free(&frame);
-        }
+        handle->writer->Close();
+        return 0;
     } catch (const std::exception& e) {
-        fprintf(stderr, "Error encoding video frame: %s\n", e.what());
+        fprintf(stderr, "MediaWriter_Close failed: %s\n", e.what());
+        return -1;
     }
 }
 
-/**
- * Encodes an audio frame.
- * @param handle Handle to the MediaWriter.
- * @param data Pointer to the raw audio data.
- * @param sampleCount The number of samples in the audio frame.
- */
-void MediaWriter_EncodeAudioFrame(MediaWriterHandle handle, const uint8_t* data, int sampleCount) {
-    if (!handle || !data) {
-        fprintf(stderr, "Invalid parameters passed to MediaWriter_EncodeAudioFrame.\n");
-        return;
-    }
-    try {
-        MediaWriter* writer = reinterpret_cast<MediaWriter*>(handle);
-        writer->EncodeAudioFrame(data, sampleCount);
-    } catch (const std::exception& e) {
-        fprintf(stderr, "Error encoding audio frame: %s\n", e.what());
-    }
-}
-
-/**
- * Closes the MediaWriter and finalizes the file.
- * @param handle Handle to the MediaWriter.
- */
-void MediaWriter_Close(MediaWriterHandle handle) {
+void MediaWriter_Destroy(MediaWriterHandle* handle) {
     if (!handle) return;
-    try {
-        MediaWriter* writer = reinterpret_cast<MediaWriter*>(handle);
-        writer->Close();
-    } catch (const std::exception& e) {
-        fprintf(stderr, "Error closing MediaWriter: %s\n", e.what());
-    }
+    delete handle;
 }
 
-/**
- * Destroys the MediaWriter instance and frees resources.
- * @param handle Handle to the MediaWriter.
- */
-void MediaWriter_Destroy(MediaWriterHandle handle) {
-    if (!handle) return;
-    try {
-        MediaWriter* writer = reinterpret_cast<MediaWriter*>(handle);
-        delete writer;
-    } catch (const std::exception& e) {
-        fprintf(stderr, "Error destroying MediaWriter: %s\n", e.what());
-    }
-}
+} // extern "C"
