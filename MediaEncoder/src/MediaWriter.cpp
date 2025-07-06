@@ -18,6 +18,30 @@ extern "C" {
 }
 
 namespace MediaEncoder {
+    struct WriterPrivateData {
+    AVFormatContext* formatCtx = nullptr;
+    AVCodecContext* videoCtx = nullptr;
+    AVCodecContext* audioCtx = nullptr;
+    AVStream* videoStream = nullptr;
+    AVStream* audioStream = nullptr;
+    AVFrame* videoFrame = nullptr;
+    AVFrame* audioFrame = nullptr;
+    int64_t videoPts = 0;
+    int64_t audioPts = 0;
+
+    ~WriterPrivateData() {
+        if (videoCtx) avcodec_free_context(&videoCtx);
+        if (audioCtx) avcodec_free_context(&audioCtx);
+        if (formatCtx) {
+            if (!(formatCtx->oformat->flags & AVFMT_NOFILE)) {
+                avio_closep(&formatCtx->pb);
+            }
+            avformat_free_context(formatCtx);
+        }
+        if (videoFrame) av_frame_free(&videoFrame);
+        if (audioFrame) av_frame_free(&audioFrame);
+    }
+    };
 
 // Helper for writing frames
 static int WriteFrame(AVFormatContext* fmtCtx, AVCodecContext* codecCtx, AVStream* stream, AVFrame* frame) {

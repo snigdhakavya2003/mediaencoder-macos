@@ -24,7 +24,6 @@ private:
 
     void SwrContextValidation(int srcChannels, AVSampleFormat srcSampleFormat, int srcSampleRate,
                               int destChannels, AVSampleFormat destSampleFormat, int destSampleRate) {
-        // Only reinitialize if configuration changed
         if (m_srcChannels != srcChannels || m_srcSampleFormat != srcSampleFormat || m_srcSampleRate != srcSampleRate ||
             m_destChannels != destChannels || m_destSampleFormat != destSampleFormat || m_destSampleRate != destSampleRate) {
 
@@ -39,16 +38,27 @@ private:
                 swr_free(&m_swrContext);
             }
 
-            m_swrContext = swr_alloc_set_opts(
-                nullptr,
-                av_get_default_channel_layout(destChannels), destSampleFormat, destSampleRate,
-                av_get_default_channel_layout(srcChannels), srcSampleFormat, srcSampleRate,
-                0, nullptr
-            );
+            AVChannelLayout srcLayout, dstLayout;
+            if (av_channel_layout_default(&dstLayout, destChannels) < 0 ||
+                av_channel_layout_default(&srcLayout, srcChannels) < 0) {
+                throw std::runtime_error("Failed to get default channel layout");
+            }
 
-            if (!m_swrContext || swr_init(m_swrContext) < 0) {
+            m_swrContext = swr_alloc();
+            if (!m_swrContext) {
+                throw std::runtime_error("Failed to allocate SwrContext");
+            }
+
+            if (swr_alloc_set_opts2(&m_swrContext,
+                                    &dstLayout, destSampleFormat, destSampleRate,
+                                    &srcLayout, srcSampleFormat, srcSampleRate,
+                                    0, nullptr) < 0 ||
+                swr_init(m_swrContext) < 0) {
                 throw std::runtime_error("Failed to initialize SwrContext");
             }
+
+            av_channel_layout_uninit(&srcLayout);
+            av_channel_layout_uninit(&dstLayout);
         }
     }
 
@@ -70,7 +80,8 @@ public:
 
     void Initialize(int srcChannels, AVSampleFormat srcSampleFormat, int srcSampleRate,
                     int destChannels, AVSampleFormat destSampleFormat, int destSampleRate) {
-        SwrContextValidation(srcChannels, srcSampleFormat, srcSampleRate, destChannels, destSampleFormat, destSampleRate);
+        SwrContextValidation(srcChannels, srcSampleFormat, srcSampleRate,
+                             destChannels, destSampleFormat, destSampleRate);
     }
 
     uint8_t* Resample(const uint8_t** srcData, int srcSamples, int& destSamples) {
@@ -78,12 +89,8 @@ public:
             throw std::runtime_error("SwrContext is not initialized");
         }
 
-        // Estimate output sample count
         int maxDstSamples = swr_get_out_samples(m_swrContext, srcSamples);
-
-        int bufferSize = av_samples_get_buffer_size(
-            nullptr, m_destChannels, maxDstSamples, m_destSampleFormat, 1
-        );
+        int bufferSize = av_samples_get_buffer_size(nullptr, m_destChannels, maxDstSamples, m_destSampleFormat, 1);
 
         if (bufferSize < 0) {
             throw std::runtime_error("Failed to get output buffer size");
