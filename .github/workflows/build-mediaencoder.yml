@@ -1,8 +1,9 @@
 name: Build MediaEncoder macOS
 
 on:
-  push:              # ← Runs on push to ANY branch
-  workflow_dispatch: # ← Allows you to run manually from GitHub UI
+  push:
+    branches: [ main ]  # Change 'main' to your actual branch if different
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,20 +13,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install dependencies (FFmpeg + pkg-config)
+      - name: Install FFmpeg and pkg-config
         run: |
           brew install pkg-config
-          brew reinstall ffmpeg  # ensures latest headers & .pc files
+          brew reinstall ffmpeg
 
-      - name: Set environment variables for pkg-config and CMake
+      - name: Set environment variables
         run: |
           echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
           echo "CMAKE_PREFIX_PATH=$(brew --prefix ffmpeg)" >> $GITHUB_ENV
 
-      - name: Debug: Confirm FFmpeg pkg-config presence
+      - name: Debug: Show FFmpeg pkg-config files
         run: |
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          pkg-config --list-all | grep av || echo "⚠️ FFmpeg modules not visible to pkg-config"
+          echo "PKG_CONFIG_PATH=${{ env.PKG_CONFIG_PATH }}"
+          ls "${{ env.PKG_CONFIG_PATH }}" || echo "⚠️ Path not found"
+          pkg-config --list-all | grep av || echo "⚠️ FFmpeg modules not visible"
 
       - name: Create build directory
         run: mkdir -p build
@@ -35,13 +37,14 @@ jobs:
         env:
           PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
           CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
-        run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
       - name: Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload built .dylib as artifact
+      - name: Upload .dylib
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
