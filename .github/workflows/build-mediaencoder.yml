@@ -23,7 +23,7 @@ jobs:
           brew reinstall pkg-config
           brew reinstall ffmpeg
 
-      - name: Debug: Show available FFmpeg .pc files
+      - name: "Debug: Show available FFmpeg .pc files"
         run: |
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
           ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || echo "❌ pkgconfig dir not found"
