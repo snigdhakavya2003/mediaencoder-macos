@@ -12,26 +12,30 @@ set(FFMPEG_LIB_DIR "/opt/homebrew/lib")
 include_directories(${FFMPEG_INCLUDE_DIR})
 link_directories(${FFMPEG_LIB_DIR})
 
+# CMakeLists.txt
+
+# Specify the source files
 set(SOURCES
-    MediaWriter.cpp
-    MediaEncoder.cpp
-    AudioFrame.cpp
-    VideoFrame.cpp
-    Resampler.cpp
-    Scaler.cpp
+    MediaEncoder-src/MediaWriter.cpp
+    MediaEncoder-src/MediaEncoder.cpp
+    MediaEncoder-src/AudioFrame.cpp
+    MediaEncoder-src/VideoFrame.cpp
+    MediaEncoder-src/Resampler.cpp
+    MediaEncoder-src/Scaler.cpp
 )
 
+# Specify the header files
 set(HEADERS
-    MediaWriter.h
-    MediaEncoder.h
-    AudioFrame.h
-    VideoFrame.h
-    Resampler.h
-    Scaler.h
-    PixelFormat.h
-    SampleFormat.h
-    AudioCodec.h
-    VideoCodec.h
+    MediaEncoder-include/MediaWriter.h
+    MediaEncoder-include/MediaEncoder.h
+    MediaEncoder-include/AudioFrame.h
+    MediaEncoder-include/VideoFrame.h
+    MediaEncoder-include/Resampler.h
+    MediaEncoder-include/Scaler.h
+    MediaEncoder-include/PixelFormat.h
+    MediaEncoder-inclue/SampleFormat.h
+    MediaEncoder-include/AudioCodec.h
+    MediaEncoder-include/VideoCodec.h
 )
 
 add_library(mediaencoder SHARED ${SOURCES} ${HEADERS})
