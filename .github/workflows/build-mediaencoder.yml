@@ -2,49 +2,45 @@ name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ master ]  # Change 'main' to your actual branch if different
+    branches: [ master ]  # Ensure your branch name is correct
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: macos-latest
 
+    env:
+      PKG_CONFIG_PATH: /opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
+      CMAKE_PREFIX_PATH: /opt/homebrew/opt/ffmpeg
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install FFmpeg and pkg-config
+      - name: Install dependencies (FFmpeg + pkg-config)
         run: |
-          brew install pkg-config
+          brew update
+          brew reinstall pkg-config
           brew reinstall ffmpeg
 
-      - name: Set environment variables
+      - name: Debug: Show available FFmpeg .pc files
         run: |
-          echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
-          echo "CMAKE_PREFIX_PATH=$(brew --prefix ffmpeg)" >> $GITHUB_ENV
-
-      - name: "Debug: Show FFmpeg pkg-config files"
-        run: |
-          echo "PKG_CONFIG_PATH=${{ env.PKG_CONFIG_PATH }}"
-          ls "${{ env.PKG_CONFIG_PATH }}" || echo "⚠️ Path not found"
-          pkg-config --list-all | grep av || echo "⚠️ FFmpeg modules not visible"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig || echo "❌ pkgconfig dir not found"
+          pkg-config --list-all | grep av || echo "❌ FFmpeg modules not listed"
 
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Run CMake configuration
+      - name: Configure project with CMake
         working-directory: build
-        env:
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
-        run: |
-          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
+        run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
       - name: Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload .dylib
+      - name: Upload built .dylib
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
