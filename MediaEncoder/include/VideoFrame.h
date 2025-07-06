@@ -2,11 +2,11 @@
 
 #include <vector>
 #include <memory>
-#include <cstdint>
+#include <stdexcept>
 
 extern "C" {
 #include <libavutil/frame.h>
-#include <libavutil/pixfmt.h>
+#include <libavutil/imgutils.h>
 }
 
 namespace MediaEncoder {
@@ -19,8 +19,8 @@ public:
     ~VideoFrame();
 
     void Dispose();
-    void FillFrame(const uint8_t* srcData, int srcStride);
 
+    void FillFrame(const uint8_t* srcData, int srcStride);
     AVFrame* NativePointer() const;
     int Width() const;
     int Height() const;
