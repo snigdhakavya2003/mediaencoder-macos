@@ -2,7 +2,7 @@ name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ main ]  # Change 'main' to your actual branch if different
+    branches: [ master ]  # Change 'main' to your actual branch if different
   workflow_dispatch:
 
 jobs:
