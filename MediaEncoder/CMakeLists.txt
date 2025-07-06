@@ -17,8 +17,9 @@ find_library(AVFORMAT_LIB avformat REQUIRED)
 find_library(SWSCALE_LIB swscale REQUIRED)
 find_library(SWRESAMPLE_LIB swresample REQUIRED)
 
+# Include and link directories
 include_directories(
-    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
     /usr/local/include
     /opt/homebrew/include
 )
@@ -28,36 +29,14 @@ link_directories(
     /opt/homebrew/lib
 )
 
-# Assuming sources are in MediaEncoder/
-set(SOURCES
-    MediaEncoder/src/AudioFrame.cpp
-    MediaEncoder/src/MediaEncoder.cpp
-    MediaEncoder/src/MediaFormat.cpp
-    MediaEncoder/src/MediaWriter.cpp
-    MediaEncoder/src/Resampler.cpp
-    MediaEncoder/src/Scaler.cpp
-    MediaEncoder/src/VideoFrame.cpp
-    MediaEncoder/src/mediaencoder_c_api.cpp
-)
+# Collect all source and header files from src and include
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE HEADERS "include/*.h")
 
-set(HEADERS
-    MediaEncoder/include/AudioFrame.h
-    MediaEncoder/include/MediaEncoder.h
-    MediaEncoder/include/MediaFormat.h
-    MediaEncoder/include/MediaWriter.h
-    MediaEncoder/include/Resampler.h
-    MediaEncoder/include/Scaler.h
-    MediaEncoder/include/SampleFormat.h
-    MediaEncoder/include/VideoFrame.h
-    MediaEncoder/include/AudioCodec.h
-    MediaEncoder/include/VideoCodec.h
-    MediaEncoder/include/PixelFormat.h
-    MediaEncoder/include/mediaencoder_c_api.h
-)
-# Add library (static or shared)
+# Create the static library
 add_library(mediaencoder STATIC ${SOURCES} ${HEADERS})
 
-# Link FFmpeg libs
+# Link FFmpeg libraries
 target_link_libraries(mediaencoder
     ${AVUTIL_LIB}
     ${AVCODEC_LIB}
@@ -66,8 +45,8 @@ target_link_libraries(mediaencoder
     ${SWRESAMPLE_LIB}
 )
 
-# If building a shared lib (optional alternative)
-# add_library(mediaencoder SHARED ${SOURCES} ${HEADERS})
+# Set include directories for this target
+target_include_directories(mediaencoder PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-# Export headers if needed
-target_include_directories(mediaencoder PUBLIC ${CMAKE_SOURCE_DIR})
+# Optional: enable verbose output during compilation
+set(CMAKE_VERBOSE_MAKEFILE ON)
