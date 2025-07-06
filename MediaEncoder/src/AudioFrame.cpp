@@ -14,10 +14,13 @@ namespace MediaEncoder
         m_avFrame->format = static_cast<int>(sampleFormat);
         m_avFrame->nb_samples = samples;
 
-        if (av_channel_layout_default(&m_avFrame->ch_layout, channels) < 0)
-        {
+        // Corrected: call without return check
+        av_channel_layout_default(&m_avFrame->ch_layout, channels);
+
+        // Optional: check if layout is valid
+        if (!av_channel_layout_check(&m_avFrame->ch_layout)) {
             av_frame_free(&m_avFrame);
-            throw std::runtime_error("Failed to set default channel layout.");
+            throw std::runtime_error("Invalid default channel layout.");
         }
 
         if (av_frame_get_buffer(m_avFrame, 0) < 0)

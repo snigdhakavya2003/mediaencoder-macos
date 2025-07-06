@@ -9,27 +9,26 @@
 #include <cstdio>
 #include <exception>
 
+using namespace MediaEncoder;
+
 // Define handle
 struct MediaWriterHandle {
-    std::unique_ptr<MediaEncoder::MediaWriter> writer;
+    std::unique_ptr<MediaWriter> writer;
 };
 
 // Helper to convert enums to string names
-std::string CodecToString(MediaEncoder::VideoCodec codec) {
+std::string CodecToString(VideoCodec codec) {
     switch (codec) {
-        case MediaEncoder::VideoCodec::H264: return "libx264";
-        case MediaEncoder::VideoCodec::Hevc: return "libx265";
-        case MediaEncoder::VideoCodec::Mpeg4: return "mpeg4";
-        default: return "libx264"; // default fallback
+        case VideoCodec::H264: return "libx264";
+        case VideoCodec::HEVC: return "libx265";
+        case VideoCodec::MPEG4: return "mpeg4";
+        default: return "libx264"; // fallback
     }
 }
 
-std::string CodecToString(MediaEncoder::AudioCodec codec) {
-    switch (codec) {
-        case MediaEncoder::AudioCodec::Aac: return "aac";
-        case MediaEncoder::AudioCodec::Mp3: return "libmp3lame";
-        default: return "aac"; // default fallback
-    }
+std::string CodecToString(AudioCodec codec) {
+    const char* name = ToCodecName(codec); // use helper in AudioCodec.h
+    return name ? name : "aac";  // default fallback
 }
 
 extern "C" {
@@ -40,13 +39,13 @@ MediaWriterHandle* MediaWriter_Create(
     int fps_num,
     int fps_den,
     int video_bitrate,
-    MediaEncoder::VideoCodec videoCodec,
+    VideoCodec videoCodec,
     int audio_bitrate,
-    MediaEncoder::AudioCodec audioCodec
+    AudioCodec audioCodec
 ) {
     try {
         auto* handle = new MediaWriterHandle();
-        handle->writer = std::make_unique<MediaEncoder::MediaWriter>(
+        handle->writer = std::make_unique<MediaWriter>(
             width,
             height,
             fps_num,
@@ -73,7 +72,7 @@ int MediaWriter_Open(MediaWriterHandle* handle, const char* filename, const char
     }
 }
 
-int MediaWriter_EncodeVideoFrame(MediaWriterHandle* handle, MediaEncoder::VideoFrame* frame) {
+int MediaWriter_EncodeVideoFrame(MediaWriterHandle* handle, VideoFrame* frame) {
     try {
         handle->writer->EncodeVideoFrame(frame);
         return 0;
@@ -83,7 +82,7 @@ int MediaWriter_EncodeVideoFrame(MediaWriterHandle* handle, MediaEncoder::VideoF
     }
 }
 
-int MediaWriter_EncodeAudioFrame(MediaWriterHandle* handle, MediaEncoder::AudioFrame* frame) {
+int MediaWriter_EncodeAudioFrame(MediaWriterHandle* handle, AudioFrame* frame) {
     try {
         handle->writer->EncodeAudioFrame(frame);
         return 0;

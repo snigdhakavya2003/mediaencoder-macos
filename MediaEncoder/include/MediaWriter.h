@@ -3,13 +3,13 @@
 #include <string>
 #include <memory>
 
-struct AVFormatContext;
-struct AVCodecContext;
-struct AVStream;
-struct AVFrame;
+extern "C" {
+    #include <libavformat/avformat.h>
+    #include <libavcodec/avcodec.h>
+}
 
+// Forward declarations
 namespace MediaEncoder {
-
     class VideoFrame;
     class AudioFrame;
 
@@ -22,10 +22,8 @@ namespace MediaEncoder {
         ~MediaWriter() = default;
 
         void Open(const std::string& url, const std::string& format);
-
         void EncodeVideoFrame(VideoFrame* frame);
         void EncodeAudioFrame(AudioFrame* frame);
-
         void Close();
 
         int GetWidth() const { return m_width; }
@@ -46,7 +44,32 @@ namespace MediaEncoder {
 
         bool m_disposed;
 
-        struct WriterPrivateData;
+        // ✅ Full definition required to avoid incomplete type error
+        struct WriterPrivateData {
+            AVFormatContext* formatCtx = nullptr;
+            AVCodecContext* videoCtx = nullptr;
+            AVCodecContext* audioCtx = nullptr;
+            AVStream* videoStream = nullptr;
+            AVStream* audioStream = nullptr;
+            AVFrame* videoFrame = nullptr;
+            AVFrame* audioFrame = nullptr;
+            int64_t videoPts = 0;
+            int64_t audioPts = 0;
+
+            ~WriterPrivateData() {
+                if (videoCtx) avcodec_free_context(&videoCtx);
+                if (audioCtx) avcodec_free_context(&audioCtx);
+                if (formatCtx) {
+                    if (!(formatCtx->oformat->flags & AVFMT_NOFILE)) {
+                        avio_closep(&formatCtx->pb);
+                    }
+                    avformat_free_context(formatCtx);
+                }
+                if (videoFrame) av_frame_free(&videoFrame);
+                if (audioFrame) av_frame_free(&audioFrame);
+            }
+        };
+
         std::unique_ptr<WriterPrivateData> m_data;
     };
 

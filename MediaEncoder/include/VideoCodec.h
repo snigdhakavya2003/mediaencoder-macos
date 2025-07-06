@@ -6,7 +6,6 @@ extern "C" {
 
 namespace MediaEncoder {
 
-    // Enum class representing all supported video codecs from FFmpeg
     enum class VideoCodec {
         None = AV_CODEC_ID_NONE,
         MPEG1 = AV_CODEC_ID_MPEG1VIDEO,
@@ -23,6 +22,7 @@ namespace MediaEncoder {
         VP6 = AV_CODEC_ID_VP6,
         VP6F = AV_CODEC_ID_VP6F,
         VP6A = AV_CODEC_ID_VP6A,
+        VP7 = AV_CODEC_ID_VP7,
         VP8 = AV_CODEC_ID_VP8,
         VP9 = AV_CODEC_ID_VP9,
         AV1 = AV_CODEC_ID_AV1,
@@ -42,6 +42,7 @@ namespace MediaEncoder {
         JPEGLS = AV_CODEC_ID_JPEGLS,
         PRORES = AV_CODEC_ID_PRORES,
         DNXHD = AV_CODEC_ID_DNXHD,
+        DNXHR = AV_CODEC_ID_DNXHD,
         UTVIDEO = AV_CODEC_ID_UTVIDEO,
         FFV1 = AV_CODEC_ID_FFV1,
         FFVHUFF = AV_CODEC_ID_FFVHUFF,
@@ -59,7 +60,6 @@ namespace MediaEncoder {
         CINEPAK = AV_CODEC_ID_CINEPAK,
         CLJR = AV_CODEC_ID_CLJR,
         CMV = AV_CODEC_ID_CMV,
-        DNXHR = AV_CODEC_ID_DNXHD, // Same as DNXHD
         DPX = AV_CODEC_ID_DPX,
         DXA = AV_CODEC_ID_DXA,
         DXV = AV_CODEC_ID_DXV,
@@ -73,18 +73,17 @@ namespace MediaEncoder {
         GVQ = AV_CODEC_ID_TGQ,
         GVQI = AV_CODEC_ID_TQI,
         HNM4_VIDEO = AV_CODEC_ID_HNM4_VIDEO,
-        ICO = AV_CODEC_ID_ICON,
         IDCIN = AV_CODEC_ID_IDCIN,
         INDEO2 = AV_CODEC_ID_INDEO2,
         INDEO3 = AV_CODEC_ID_INDEO3,
         INDEO4 = AV_CODEC_ID_INDEO4,
         INDEO5 = AV_CODEC_ID_INDEO5,
-        INTERPLAY_VIDEO = AV_CODEC_ID_INTERPLAYVIDEO,
+        INTERPLAY_VIDEO = AV_CODEC_ID_INTERPLAY_VIDEO,
         JPEGXL = AV_CODEC_ID_JPEGXL,
         KMVC = AV_CODEC_ID_KMVC,
         LOCO = AV_CODEC_ID_LOCO,
         MDEC = AV_CODEC_ID_MDEC,
-        MSRLE = AV_CODEC_ID_MS_RLE,
+        MSRLE = AV_CODEC_ID_MSRLE,
         MSMPEG4V1 = AV_CODEC_ID_MSMPEG4V1,
         MSMPEG4V2 = AV_CODEC_ID_MSMPEG4V2,
         MSMPEG4V3 = AV_CODEC_ID_MSMPEG4V3,
@@ -125,23 +124,19 @@ namespace MediaEncoder {
         VIDEO = AV_CODEC_ID_VMNC,
         VIXL = AV_CODEC_ID_VIXL,
         VMDVIDEO = AV_CODEC_ID_VMDVIDEO,
-        VP7 = AV_CODEC_ID_VP7,
         XBM = AV_CODEC_ID_XBM,
         XWD = AV_CODEC_ID_XWD,
-        XL = AV_CODEC_ID_XL,
-        ZERO12V = AV_CODEC_ID_ZERO12V,
         ZEROCODEC = AV_CODEC_ID_ZEROCODEC,
+        ZERO12V = AV_CODEC_ID_012V,
         AVS = AV_CODEC_ID_AVS,
         AVS2 = AV_CODEC_ID_AVS2,
         AVS3 = AV_CODEC_ID_AVS3
     };
 
-    // Useful aliases for external clarity
     namespace VideoCodecAlias {
         constexpr VideoCodec H265 = VideoCodec::HEVC;
         constexpr VideoCodec WMV1 = VideoCodec::MSMPEG4V1;
         constexpr VideoCodec WMV2 = VideoCodec::MSMPEG4V2;
-        constexpr VideoCodec WMV3 = VideoCodec::WMV3;
         constexpr VideoCodec MPEG1VIDEO = VideoCodec::MPEG1;
         constexpr VideoCodec MPEG2VIDEO = VideoCodec::MPEG2;
         constexpr VideoCodec VPX = VideoCodec::VP9;
