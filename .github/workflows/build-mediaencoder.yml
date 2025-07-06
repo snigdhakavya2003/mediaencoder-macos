@@ -1,9 +1,8 @@
 name: Build MediaEncoder macOS
 
 on:
-  push:
-    branches: [ main ]  # CHANGE to your actual branch name if needed
-  workflow_dispatch:
+  push:              # ← Runs on push to ANY branch
+  workflow_dispatch: # ← Allows you to run manually from GitHub UI
 
 jobs:
   build:
@@ -16,34 +15,33 @@ jobs:
       - name: Install dependencies (FFmpeg + pkg-config)
         run: |
           brew install pkg-config
-          brew reinstall ffmpeg  # reinstall to ensure latest formula with headers
+          brew reinstall ffmpeg  # ensures latest headers & .pc files
 
-      - name: Export env variables
+      - name: Set environment variables for pkg-config and CMake
         run: |
-          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix ffmpeg)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$(brew --prefix ffmpeg)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
           echo "CMAKE_PREFIX_PATH=$(brew --prefix ffmpeg)" >> $GITHUB_ENV
 
-      - name: Debug FFmpeg libraries with pkg-config
+      - name: Debug: Confirm FFmpeg pkg-config presence
         run: |
-          echo "Using PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
-          pkg-config --exists libavcodec && echo "✅ libavcodec found" || echo "❌ libavcodec not found"
-          pkg-config --exists libavformat && echo "✅ libavformat found" || echo "❌ libavformat not found"
-          pkg-config --exists libavutil && echo "✅ libavutil found" || echo "❌ libavutil not found"
-          pkg-config --exists libswscale && echo "✅ libswscale found" || echo "❌ libswscale not found"
-          pkg-config --exists libswresample && echo "✅ libswresample found" || echo "❌ libswresample not found"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          pkg-config --list-all | grep av || echo "⚠️ FFmpeg modules not visible to pkg-config"
 
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Configure with CMake
+      - name: Run CMake configuration
         working-directory: build
+        env:
+          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
+          CMAKE_PREFIX_PATH: ${{ env.CMAKE_PREFIX_PATH }}
         run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
       - name: Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload .dylib artifact
+      - name: Upload built .dylib as artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
