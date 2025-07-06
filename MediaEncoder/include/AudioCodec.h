@@ -1,109 +1,128 @@
-
 #pragma once
 
 extern "C" {
-#include <libavcodec/avcodec.h> // Include FFmpeg codec definitions
+#include <libavcodec/avcodec.h>
 }
+
+#include <string>
 
 namespace MediaEncoder {
 
-    // Enum class for audio codecs
+    // One-to-one enum for all supported audio codecs
     enum class AudioCodec {
-        None = AV_CODEC_ID_NONE,                  ///< No codec
-        Pcm16 = AV_CODEC_ID_PCM_S16LE,            ///< Pulse Code Modulation (16-bit)
-        AmrNarrowBand = AV_CODEC_ID_AMR_NB,       ///< Adaptive Multi-Rate Narrowband
-        AmrWideBand = AV_CODEC_ID_AMR_WB,         ///< Adaptive Multi-Rate Wideband
-        Ra144 = AV_CODEC_ID_RA_144,               ///< RealAudio 1.0
-        Ra288 = AV_CODEC_ID_RA_288,               ///< RealAudio 2.0
-        Mp2 = AV_CODEC_ID_MP2,                     ///< MPEG Audio Layer II
-        Mp3 = AV_CODEC_ID_MP3,                     ///< MPEG Audio Layer III
-        Aac = AV_CODEC_ID_AAC,                     ///< Advanced Audio Coding
-        Ac3 = AV_CODEC_ID_AC3,                     ///< Dolby Digital AC-3
-        Dts = AV_CODEC_ID_DTS,                     ///< Digital Theater Systems
-        Vorbis = AV_CODEC_ID_VORBIS,               ///< Vorbis Audio Codec
-        DvAudio = AV_CODEC_ID_DVAUDIO,             ///< DV Audio
-        WmaV1 = AV_CODEC_ID_WMAV1,                 ///< Windows Media Audio 1
-        WmaV2 = AV_CODEC_ID_WMAV2,                 ///< Windows Media Audio 2
-        Mace3 = AV_CODEC_ID_MACE3,                 ///< MACE 3:1
-        Mace6 = AV_CODEC_ID_MACE6,                 ///< MACE 6:1
-        VMdAudio = AV_CODEC_ID_VMDAUDIO,           ///< VMD Audio
-        Flac = AV_CODEC_ID_FLAC,                   ///< Free Lossless Audio Codec
-        Mp3Adu = AV_CODEC_ID_MP3ADU,               ///< MP3 ADU
-        Mp3On4 = AV_CODEC_ID_MP3ON4,               ///< MP3 on 4
-        Shorten = AV_CODEC_ID_SHORTEN,             ///< Shorten
-        Alac = AV_CODEC_ID_ALAC,                   ///< Apple Lossless Audio Codec
-        WestwoodSnd1 = AV_CODEC_ID_WESTWOOD_SND1, ///< Westwood Audio 1
-        Gsm = AV_CODEC_ID_GSM,                     ///< GSM
-        Qdm2 = AV_CODEC_ID_QDM2,                   ///< QDM2
-        Cook = AV_CODEC_ID_COOK,                   ///< Cook
-        Truespeech = AV_CODEC_ID_TRUESPEECH,      ///< TrueSpeech
-        Tta = AV_CODEC_ID_TTA,                     ///< TTA
-        SmackAudio = AV_CODEC_ID_SMACKAUDIO,      ///< Smack Audio
-        Qcelp = AV_CODEC_ID_QCELP,                 ///< QCELP
-        Wavpack = AV_CODEC_ID_WAVPACK,             ///< WavPack
-        DsiCinAudio = AV_CODEC_ID_DSICINAUDIO,     ///< DSI Cinema Audio
-        Imc = AV_CODEC_ID_IMC,                     ///< IMC
-        Musepack7 = AV_CODEC_ID_MUSEPACK7,         ///< Musepack 7
-        Mlp = AV_CODEC_ID_MLP,                     ///< MLP
-        GsmMs = AV_CODEC_ID_GSM_MS,                ///< GSM MS
-        Atrac3 = AV_CODEC_ID_ATRAC3,               ///< ATRAC3
-        Ape = AV_CODEC_ID_APE,                     ///< APE
-        Nellymoser = AV_CODEC_ID_NELLYMOSER,       ///< Nellymoser
-        Musepack8 = AV_CODEC_ID_MUSEPACK8,         ///< Musepack 8
-        Speex = AV_CODEC_ID_SPEEX,                 ///< Speex
-        Wmavoice = AV_CODEC_ID_WMAVOICE,           ///< Windows Media Audio Voice
-        WmaPro = AV_CODEC_ID_WMAPRO,               ///< Windows Media Audio Pro
-        WmaLossless = AV_CODEC_ID_WMALOSSLESS,     ///< Windows Media Audio Lossless
-        Trac3p = AV_CODEC_ID_TRAC3P,               ///< ATRAC3+
-        Eac3 = AV_CODEC_ID_EAC3,                   ///< Enhanced AC-3
-        Sipr = AV_CODEC_ID_SIPR,                   ///< SIPR
-        Mp1 = AV_CODEC_ID_MP1,                     ///< MPEG Audio Layer I
-        TwinVQ = AV_CODEC_ID_TWINVQ,               ///< TwinVQ
-        TrueHD = AV_CODEC_ID_TRUEHD,               ///< TrueHD
-        MP4Als = AV_CODEC_ID_MP4ALS,               ///< MP4 ALS
-        Atrac1 = AV_CODEC_ID_ATRAC1,               ///< ATRAC1
-        BinkAudioRdft = AV_CODEC_ID_BINKAUDIO_RDFT,///< Bink Audio RDFT
-        BinkAudioDct = AV_CODEC_ID_BINKAUDIO_DCT,  ///< Bink Audio DCT
-        AacLatm = AV_CODEC_ID_AAC_LATM,            ///< AAC LATM
-        Qdmc = AV_CODEC_ID_QDMC,                   ///< QDMC
-        Celt = AV_CODEC_ID_CELT,                   ///< CELT
-        G723_1 = AV_CODEC_ID_G723_1,               ///< G723.1
-        G729 = AV_CODEC_ID_G729,                   ///< G.729
-        EightSvxExp = AV_CODEC_ID_EIGHTSVX_EXP,   ///< 8SVX EXP
-        EightSvxFib = AV_CODEC_ID_EIGHTSVX_FIB,   ///< 8SVX FIB
-        BmvAudio = AV_CODEC_ID_BMV_AUDIO,          ///< BMV Audio
-        Ralf = AV_CODEC_ID_RALF,                   ///< RALF
-        Iac = AV_CODEC_ID_IAC,                     ///< IAC
-        Ilbc = AV_CODEC_ID_ILBC,                   ///< iLBC
-        Opus = AV_CODEC_ID_OPUS,                   ///< Opus
-        ComfortNoise = AV_CODEC_ID_COMFORT_NOISE,  ///< Comfort Noise
-        Tak = AV_CODEC_ID_TAK,                     ///< TAK
-        MetaSound = AV_CODEC_ID_METASOUND,         ///< MetaSound
-        PafAudio = AV_CODEC_ID_PAF_AUDIO,          ///< PAF Audio
-        On2Avc = AV_CODEC_ID_ON2AVC,               ///< On2 AVC
-        DsSsp = AV_CODEC_ID_DSSSP,                 ///< DSSS
-        FfwaveSynth = AV_CODEC_ID_FFWAVESYNTH,     ///< FF Wave Synth
-        Sonic = AV_CODEC_ID_SONIC,                 ///< Sonic
-        SonicLossless = AV_CODEC_ID_SONIC_LOSSLESS,///< Sonic Lossless
-        Evrc = AV_CODEC_ID_EVRC,                   ///< EVRC
-        Smv = AV_CODEC_ID_SMV,                     ///< SMV
-        DsdLsbf = AV_CODEC_ID_DSD_LSBF,            ///< DSD LSBF
-        DsdMsbf = AV_CODEC_ID_DSD_MSBF,            ///< DSD MSBF
-        DsdLsbfPlanar = AV_CODEC_ID_DSD_LSBF_PLANAR, ///< DSD LSBF Planar
-        DsdMsbfPlanar = AV_CODEC_ID_DSD_MSBF_PLANAR, ///< DSD MSBF Planar
-        FourGv = AV_CODEC_ID_FOURGV,               ///< 4GV
-        InterplayAcm = AV_CODEC_ID_INTERPLAY_ACM,  ///< Interplay ACM
-        Xma1 = AV_CODEC_ID_XMA1,                   ///< XMA1
-        Xma2 = AV_CODEC_ID_XMA2,                   ///< XMA2
-        Dst = AV_CODEC_ID_DST                       ///< DST
+        None = AV_CODEC_ID_NONE,
+        PCM_S16LE = AV_CODEC_ID_PCM_S16LE,
+        PCM_S16BE = AV_CODEC_ID_PCM_S16BE,
+        PCM_U16LE = AV_CODEC_ID_PCM_U16LE,
+        PCM_U16BE = AV_CODEC_ID_PCM_U16BE,
+        PCM_S8 = AV_CODEC_ID_PCM_S8,
+        PCM_U8 = AV_CODEC_ID_PCM_U8,
+        PCM_MULAW = AV_CODEC_ID_PCM_MULAW,
+        PCM_ALAW = AV_CODEC_ID_PCM_ALAW,
+        PCM_S32LE = AV_CODEC_ID_PCM_S32LE,
+        PCM_S32BE = AV_CODEC_ID_PCM_S32BE,
+        PCM_U32LE = AV_CODEC_ID_PCM_U32LE,
+        PCM_U32BE = AV_CODEC_ID_PCM_U32BE,
+        PCM_S24LE = AV_CODEC_ID_PCM_S24LE,
+        PCM_S24BE = AV_CODEC_ID_PCM_S24BE,
+        PCM_U24LE = AV_CODEC_ID_PCM_U24LE,
+        PCM_U24BE = AV_CODEC_ID_PCM_U24BE,
+        PCM_S24DAUD = AV_CODEC_ID_PCM_S24DAUD,
+        PCM_ZORK = AV_CODEC_ID_PCM_ZORK,
+        PCM_S16LE_PLANAR = AV_CODEC_ID_PCM_S16LE_PLANAR,
+        PCM_DVD = AV_CODEC_ID_PCM_DVD,
+        PCM_F32BE = AV_CODEC_ID_PCM_F32BE,
+        PCM_F32LE = AV_CODEC_ID_PCM_F32LE,
+        PCM_F64BE = AV_CODEC_ID_PCM_F64BE,
+        PCM_F64LE = AV_CODEC_ID_PCM_F64LE,
+        PCM_BLURAY = AV_CODEC_ID_PCM_BLURAY,
+        PCM_LXF = AV_CODEC_ID_PCM_LXF,
+        PCM_S8_PLANAR = AV_CODEC_ID_PCM_S8_PLANAR,
+        PCM_S24LE_PLANAR = AV_CODEC_ID_PCM_S24LE_PLANAR,
+        PCM_S32LE_PLANAR = AV_CODEC_ID_PCM_S32LE_PLANAR,
+        PCM_S16BE_PLANAR = AV_CODEC_ID_PCM_S16BE_PLANAR,
+
+        ADPCM_IMA_QT = AV_CODEC_ID_ADPCM_IMA_QT,
+        ADPCM_IMA_WAV = AV_CODEC_ID_ADPCM_IMA_WAV,
+        ADPCM_IMA_DK3 = AV_CODEC_ID_ADPCM_IMA_DK3,
+        ADPCM_IMA_DK4 = AV_CODEC_ID_ADPCM_IMA_DK4,
+        ADPCM_IMA_WS = AV_CODEC_ID_ADPCM_IMA_WS,
+        ADPCM_IMA_SMJPEG = AV_CODEC_ID_ADPCM_IMA_SMJPEG,
+        ADPCM_MS = AV_CODEC_ID_ADPCM_MS,
+        ADPCM_4XM = AV_CODEC_ID_ADPCM_4XM,
+        ADPCM_XA = AV_CODEC_ID_ADPCM_XA,
+        ADPCM_ADX = AV_CODEC_ID_ADPCM_ADX,
+        ADPCM_EA = AV_CODEC_ID_ADPCM_EA,
+        ADPCM_G726 = AV_CODEC_ID_ADPCM_G726,
+        ADPCM_CT = AV_CODEC_ID_ADPCM_CT,
+        ADPCM_SWF = AV_CODEC_ID_ADPCM_SWF,
+        ADPCM_YAMAHA = AV_CODEC_ID_ADPCM_YAMAHA,
+        ADPCM_SBPRO_4 = AV_CODEC_ID_ADPCM_SBPRO_4,
+        ADPCM_SBPRO_3 = AV_CODEC_ID_ADPCM_SBPRO_3,
+        ADPCM_SBPRO_2 = AV_CODEC_ID_ADPCM_SBPRO_2,
+        ADPCM_THP = AV_CODEC_ID_ADPCM_THP,
+        ADPCM_IMA_AMV = AV_CODEC_ID_ADPCM_IMA_AMV,
+        ADPCM_EA_R1 = AV_CODEC_ID_ADPCM_EA_R1,
+        ADPCM_EA_R3 = AV_CODEC_ID_ADPCM_EA_R3,
+        ADPCM_EA_R2 = AV_CODEC_ID_ADPCM_EA_R2,
+        ADPCM_IMA_EA_SEAD = AV_CODEC_ID_ADPCM_IMA_EA_SEAD,
+        ADPCM_IMA_EA_EACS = AV_CODEC_ID_ADPCM_IMA_EA_EACS,
+        ADPCM_EA_XAS = AV_CODEC_ID_ADPCM_EA_XAS,
+        ADPCM_IMA_EA_EACS = AV_CODEC_ID_ADPCM_IMA_EA_EACS,
+
+        AMR_NB = AV_CODEC_ID_AMR_NB,
+        AMR_WB = AV_CODEC_ID_AMR_WB,
+        RA_144 = AV_CODEC_ID_RA_144,
+        RA_288 = AV_CODEC_ID_RA_288,
+
+        MP2 = AV_CODEC_ID_MP2,
+        MP3 = AV_CODEC_ID_MP3,
+        AAC = AV_CODEC_ID_AAC,
+        AC3 = AV_CODEC_ID_AC3,
+        EAC3 = AV_CODEC_ID_EAC3,
+        DCA = AV_CODEC_ID_DTS,
+        VORBIS = AV_CODEC_ID_VORBIS,
+        FLAC = AV_CODEC_ID_FLAC,
+        ALAC = AV_CODEC_ID_ALAC,
+        OPUS = AV_CODEC_ID_OPUS,
+        SPEEX = AV_CODEC_ID_SPEEX,
+        APE = AV_CODEC_ID_APE,
+        ATRAC3 = AV_CODEC_ID_ATRAC3,
+        TRUEHD = AV_CODEC_ID_TRUEHD,
+        DTS = AV_CODEC_ID_DTS,
+        MP3ADU = AV_CODEC_ID_MP3ADU,
+        MP3ON4 = AV_CODEC_ID_MP3ON4,
+        MP1 = AV_CODEC_ID_MP1,
+        MP4ALS = AV_CODEC_ID_MP4ALS,
+
+        // Add more as needed
     };
 
-// Instead of enum class BackwardCompatibility
-namespace BackwardCompatibility {
-    constexpr AudioCodec MP3 = AudioCodec::Mp3;
-    constexpr AudioCodec AAC = AudioCodec::Aac;
-    constexpr AudioCodec M4A = AudioCodec::MP4Als;
-    constexpr AudioCodec MP4ALS = AudioCodec::MP4Als;
-}
+    // Optional mapping functions (codec string or ID)
+    inline const char* ToCodecName(AudioCodec codec) {
+        switch (codec) {
+            case AudioCodec::MP3: return "libmp3lame";
+            case AudioCodec::AAC: return "aac";
+            case AudioCodec::FLAC: return "flac";
+            case AudioCodec::OPUS: return "libopus";
+            case AudioCodec::VORBIS: return "libvorbis";
+            case AudioCodec::AC3: return "ac3";
+            case AudioCodec::EAC3: return "eac3";
+            case AudioCodec::ALAC: return "alac";
+            case AudioCodec::PCM_S16LE: return "pcm_s16le";
+            case AudioCodec::PCM_F32LE: return "pcm_f32le";
+            default: return nullptr;
+        }
+    }
+
+    inline AVCodecID ToAVCodecID(AudioCodec codec) {
+        return static_cast<AVCodecID>(codec);
+    }
+
+    namespace BackwardCompatibility {
+        constexpr AudioCodec MP3 = AudioCodec::MP3;
+        constexpr AudioCodec AAC = AudioCodec::AAC;
+        constexpr AudioCodec FLAC = AudioCodec::FLAC;
+    }
 
 } // namespace MediaEncoder
