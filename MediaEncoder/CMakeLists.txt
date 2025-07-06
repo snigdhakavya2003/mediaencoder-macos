@@ -28,34 +28,32 @@ link_directories(
     /opt/homebrew/lib
 )
 
-# Source files
+# Assuming sources are in MediaEncoder/
 set(SOURCES
-    AudioFrame.cpp
-    MediaEncoder.cpp
-    MediaFormat.cpp
-    MediaWriter.cpp
-    Resampler.cpp
-    Scaler.cpp
-    VideoFrame.cpp
-    mediaencoder_c_api.cpp
+    MediaEncoder/src/AudioFrame.cpp
+    MediaEncoder/src/MediaEncoder.cpp
+    MediaEncoder/src/MediaFormat.cpp
+    MediaEncoder/src/MediaWriter.cpp
+    MediaEncoder/src/Resampler.cpp
+    MediaEncoder/src/Scaler.cpp
+    MediaEncoder/src/VideoFrame.cpp
+    MediaEncoder/src/mediaencoder_c_api.cpp
 )
 
-# Header files (optional but clean for IDEs)
 set(HEADERS
-    AudioFrame.h
-    MediaEncoder.h
-    MediaFormat.h
-    MediaWriter.h
-    Resampler.h
-    Scaler.h
-    SampleFormat.h
-    VideoFrame.h
-    AudioCodec.h
-    VideoCodec.h
-    PixelFormat.h
-    mediaencoder_c_api.h
+    MediaEncoder/include/AudioFrame.h
+    MediaEncoder/include/MediaEncoder.h
+    MediaEncoder/include/MediaFormat.h
+    MediaEncoder/include/MediaWriter.h
+    MediaEncoder/include/Resampler.h
+    MediaEncoder/include/Scaler.h
+    MediaEncoder/include/SampleFormat.h
+    MediaEncoder/include/VideoFrame.h
+    MediaEncoder/include/AudioCodec.h
+    MediaEncoder/include/VideoCodec.h
+    MediaEncoder/include/PixelFormat.h
+    MediaEncoder/include/mediaencoder_c_api.h
 )
-
 # Add library (static or shared)
 add_library(mediaencoder STATIC ${SOURCES} ${HEADERS})
 
