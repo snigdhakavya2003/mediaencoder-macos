@@ -2,7 +2,7 @@ name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ master ]  # Ensure your branch is named "master"
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
@@ -10,33 +10,22 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: 📥 Checkout repository
+      - name: 📥 Checkout code
         uses: actions/checkout@v3
 
-      - name: 🧰 Install FFmpeg with pkg-config support
+      - name: 🧰 Install FFmpeg and tools
         run: |
           brew update
-          brew install pkg-config
-          brew uninstall --ignore-dependencies ffmpeg || true
           brew install ffmpeg
-
-      - name: 🔍 Verify FFmpeg pkg-config availability
-        run: |
-          echo "PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig" >> $GITHUB_ENV
-          export PKG_CONFIG_PATH=/opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
-          ls /opt/homebrew/opt/ffmpeg/lib/pkgconfig
-          pkg-config --modversion libavcodec || echo "❌ libavcodec not found"
 
       - name: 🏗️ Create build directory
         run: mkdir -p build
 
-      - name: ⚙️ Run CMake configuration
+      - name: ⚙️ Configure CMake without pkg-config
         working-directory: build
-        env:
-          PKG_CONFIG_PATH: /opt/homebrew/opt/ffmpeg/lib/pkgconfig:/opt/homebrew/lib/pkgconfig
         run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
-      - name: 🧱 Build MediaEncoder
+      - name: 🧱 Build project
         working-directory: build
         run: cmake --build . --config Release
 

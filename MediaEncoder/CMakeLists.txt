@@ -1,25 +1,17 @@
-
 cmake_minimum_required(VERSION 3.10)
 project(MediaEncoder VERSION 1.0 LANGUAGES CXX)
 
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-# Enable position-independent code for shared library
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Find FFmpeg using pkg-config
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
-    avcodec
-    avformat
-    avutil
-    swscale
-    swresample
-)
-target_link_libraries(MediaEncoder PkgConfig::FFMPEG)
-# Specify the source files
+# Set FFmpeg include and lib paths manually
+set(FFMPEG_INCLUDE_DIR "/opt/homebrew/include")
+set(FFMPEG_LIB_DIR "/opt/homebrew/lib")
+
+include_directories(${FFMPEG_INCLUDE_DIR})
+link_directories(${FFMPEG_LIB_DIR})
+
 set(SOURCES
     MediaWriter.cpp
     MediaEncoder.cpp
@@ -29,7 +21,6 @@ set(SOURCES
     Scaler.cpp
 )
 
-# Specify the header files
 set(HEADERS
     MediaWriter.h
     MediaEncoder.h
@@ -43,17 +34,17 @@ set(HEADERS
     VideoCodec.h
 )
 
-# Create the shared library
 add_library(mediaencoder SHARED ${SOURCES} ${HEADERS})
-
-# Set the output name
 set_target_properties(mediaencoder PROPERTIES OUTPUT_NAME "mediaencoder")
 
-# Link FFmpeg libraries
-target_link_libraries(mediaencoder PkgConfig::FFMPEG)
+# Manually link FFmpeg libraries
+target_link_libraries(mediaencoder
+    avcodec
+    avformat
+    avutil
+    swscale
+    swresample
+)
 
-# Include directories
-target_include_directories(mediaencoder PRIVATE ${FFMPEG_INCLUDE_DIRS})
-
-# Optional: Enable verbose output for debugging
+# Optional
 set(CMAKE_VERBOSE_MAKEFILE ON)
