@@ -67,7 +67,7 @@ namespace MediaEncoder {
         EXR = AV_CODEC_ID_EXR,
         FLASHSV = AV_CODEC_ID_FLASHSV,
         FLASHSV2 = AV_CODEC_ID_FLASHSV2,
-        FOURXM = AV_CODEC_ID_FOURXM,
+        //FOURXM = AV_CODEC_ID_FOURXM,
         FRAPS = AV_CODEC_ID_FRAPS,
         GV = AV_CODEC_ID_TGV,
         GVQ = AV_CODEC_ID_TGQ,
