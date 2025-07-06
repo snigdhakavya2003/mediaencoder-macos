@@ -1,4 +1,4 @@
-cpp
+
 #ifndef VIDEO_CODEC_H
 #define VIDEO_CODEC_H
 

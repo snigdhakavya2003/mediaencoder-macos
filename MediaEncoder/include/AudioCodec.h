@@ -1,4 +1,4 @@
-cpp
+
 #pragma once
 
 extern "C" {
