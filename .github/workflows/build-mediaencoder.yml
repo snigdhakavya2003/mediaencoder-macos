@@ -2,7 +2,7 @@ name: Build MediaEncoder macOS
 
 on:
   push:
-    branches: [ main ]   # CHANGE this to your actual branch name if not "main"
+    branches: [ main ]  # CHANGE to your actual branch name if needed
   workflow_dispatch:
 
 jobs:
@@ -16,13 +16,16 @@ jobs:
       - name: Install dependencies (FFmpeg + pkg-config)
         run: |
           brew install pkg-config
-          brew install ffmpeg
+          brew reinstall ffmpeg  # reinstall to ensure latest formula with headers
 
-      - name: Verify pkg-config paths and FFmpeg modules
+      - name: Export env variables
         run: |
-          echo "Verifying pkg-config FFmpeg modules..."
-          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig" >> $GITHUB_ENV
-          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig"
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$(brew --prefix ffmpeg)/lib/pkgconfig" >> $GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$(brew --prefix ffmpeg)" >> $GITHUB_ENV
+
+      - name: Debug FFmpeg libraries with pkg-config
+        run: |
+          echo "Using PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
           pkg-config --exists libavcodec && echo "✅ libavcodec found" || echo "❌ libavcodec not found"
           pkg-config --exists libavformat && echo "✅ libavformat found" || echo "❌ libavformat not found"
           pkg-config --exists libavutil && echo "✅ libavutil found" || echo "❌ libavutil not found"
@@ -32,18 +35,15 @@ jobs:
       - name: Create build directory
         run: mkdir -p build
 
-      - name: Run CMake configuration
+      - name: Configure with CMake
         working-directory: build
-        env:
-          PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/opt/homebrew/opt/ffmpeg/lib/pkgconfig
-        run: |
-          cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
+        run: cmake ../MediaEncoder -DCMAKE_BUILD_TYPE=Release
 
       - name: Build MediaEncoder
         working-directory: build
         run: cmake --build . --config Release
 
-      - name: Upload built .dylib as artifact
+      - name: Upload .dylib artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediaEncoder-macOS-lib
